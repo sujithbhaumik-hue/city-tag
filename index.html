@@ -159,8 +159,13 @@
   #boundsStatus{font-weight:700; margin-top:4px;}
   #boundsStatus.in{color:#2e7d32;}
   #boundsStatus.out{color:var(--tagger-dark);}
-  #nextPush{color:#6b6455; display:flex; align-items:center; gap:5px;}
-  #nextPush .live-dot{
+  #globalCountdown{
+    position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:1001;
+    background:rgba(20,24,31,.92); color:#fff; padding:7px 16px; border-radius:20px;
+    font-size:12.5px; font-weight:700; display:flex; align-items:center; gap:6px;
+    box-shadow:0 4px 14px rgba(0,0,0,.25); pointer-events:none;
+  }
+  #globalCountdown .live-dot{
     width:7px; height:7px; border-radius:50%; background:var(--tagger); flex-shrink:0;
     animation:live-blink 1.4s ease-in-out infinite;
   }
@@ -184,6 +189,11 @@
   .dot.runner{background:var(--runner);}
   .dot.unknown{background:var(--unknown);}
   .dashline{width:16px; border-top:3px solid var(--tagger); display:inline-block;}
+
+  /* Low power mode: strip animations, transitions, and the pulsing radar ring —
+     the main sources of continuous re-rendering — for weaker devices/browsers. */
+  body.low-power *{ animation:none !important; transition:none !important; }
+  body.low-power .me-marker-ring{ display:none !important; }
 
   #styleSwitch{
     position:fixed; bottom:14px; right:12px; z-index:1000;
@@ -280,12 +290,12 @@
         <button class="role-btn active" data-role="tagger" type="button">
           <span class="role-icon">🎯</span>
           Tagger
-          <small>Hunt runners · 5m blips</small>
+          <small>See everyone's real role</small>
         </button>
         <button class="role-btn" data-role="runner" type="button">
           <span class="role-icon">💨</span>
           Runner
-          <small>Dodge taggers · 10m blips</small>
+          <small>Players look identical — guess who's safe</small>
         </button>
       </div>
 
@@ -310,11 +320,12 @@
 
 <div id="map"></div>
 
+<div id="globalCountdown" style="display:none;"><span class="live-dot"></span>Next blip in —</div>
+
 <div id="hud" style="display:none;">
   <div class="panel" id="mePanel">
     <b id="meName">—</b><span class="pill" id="mePill">—</span>
     <div id="boundsStatus">checking location…</div>
-    <div id="nextPush">next update in —</div>
     <button id="endGameBtn" type="button">End game</button>
   </div>
 </div>
@@ -330,6 +341,7 @@
   <button class="style-btn active" data-style="clean" type="button" onclick="setMapStyle('clean')">Clean</button>
   <button class="style-btn" data-style="standard" type="button" onclick="setMapStyle('standard')">Standard</button>
   <button class="style-btn" id="trainToggleBtn" type="button" onclick="toggleTrainLines()">🚆 Trains</button>
+  <button class="style-btn" id="lowPowerBtn" type="button" onclick="toggleLowPower()">⚡ Low power</button>
 </div>
 
 
@@ -426,7 +438,12 @@ const OUTER_RING = [
 ];
 
 /* ---------- Timing ---------- */
-const PUSH_INTERVAL = { runner: 5 * 60 * 1000, tagger: 10 * 60 * 1000 };
+// Both roles now blip on the SAME global cadence, epoch-aligned so every device
+// agrees on timing without a shared "game start" reference. This is deliberate:
+// if taggers and runners updated at different rates, a runner could infer who's
+// a tagger just by watching how often an anonymous dot moves — a single shared
+// cadence closes that leak.
+const GLOBAL_BLIP_INTERVAL = 5 * 60 * 1000;
 const POLL_INTERVAL = 20 * 1000;       // how often we refresh the map from shared storage
 const STALE_AFTER   = 25 * 60 * 1000;  // hide a player if unseen this long
 
@@ -534,6 +551,7 @@ function startGame(){
   document.getElementById('setup').style.display = 'none';
   document.getElementById('hud').style.display = 'flex';
   document.getElementById('legend').style.display = 'block';
+  document.getElementById('globalCountdown').style.display = 'flex';
   document.getElementById('styleSwitch').style.display = 'flex';
   document.getElementById('meName').textContent = myName;
   const pill = document.getElementById('mePill');
@@ -565,6 +583,10 @@ window.addEventListener('DOMContentLoaded', () => {
   if(savedRole){
     myRole = savedRole;
     document.querySelectorAll('.role-btn').forEach(b => b.classList.toggle('active', b.dataset.role === savedRole));
+  }
+  if(localStorage.getItem('cityTagLowPower') === '1'){
+    document.body.classList.add('low-power');
+    document.getElementById('lowPowerBtn').classList.add('active');
   }
 });
 
@@ -637,7 +659,18 @@ function toggleTrainLines(){
 }
 
 function initMap(){
-  map = L.map('map', { zoomControl: true }).setView(CENTER, 15);
+  // Restrict panning to roughly the play area (with some breathing room) so the
+  // browser never has to render/fetch tiles for the rest of the world — this is
+  // the main lag fix, since an unbounded map lets people pan/zoom out infinitely.
+  const padLat = 0.012, padLng = 0.015;
+  const lats = BOUNDARY.map(p => p[0]), lngs = BOUNDARY.map(p => p[1]);
+  const bounds = L.latLngBounds(
+    [Math.min(...lats) - padLat, Math.min(...lngs) - padLng],
+    [Math.max(...lats) + padLat, Math.max(...lngs) + padLng]
+  );
+
+  map = L.map('map', { zoomControl: true, maxBounds: bounds, maxBoundsViscosity: 1.0 }).setView(CENTER, 15);
+  map.setMinZoom(13);
   setMapStyle('clean'); // closest free look to Apple Maps' light style
 
   // Outer ring + inner BOUNDARY ring = a polygon with a hole, so only the
@@ -645,6 +678,13 @@ function initMap(){
   boundaryLayer = L.polygon([OUTER_RING, BOUNDARY], {
     color: '#d1352f', weight: 3, fillColor: '#d1352f', fillOpacity: 0.16
   }).addTo(map);
+}
+
+function toggleLowPower(){
+  const btn = document.getElementById('lowPowerBtn');
+  const on = document.body.classList.toggle('low-power');
+  btn.classList.toggle('active', on);
+  localStorage.setItem('cityTagLowPower', on ? '1' : '0');
 }
 
 function pointInBoundary(lat, lng){
@@ -695,23 +735,24 @@ function drawMe(){
   statusEl.className = inside ? 'in' : 'out';
 }
 
-/* ---------- Pushing my location on my role's blip interval ---------- */
-/* The clock is based on real elapsed time since the last push (stored in
-   localStorage), not an in-memory countdown — so closing the browser doesn't
-   reset it. Reopening after the interval has already passed blips immediately;
-   reopening early just resumes the remaining countdown. */
+/* ---------- Pushing my location on the global blip cadence ---------- */
+/* Every device blips at the same wall-clock boundaries (epoch-aligned: whenever
+   Date.now() crosses a multiple of GLOBAL_BLIP_INTERVAL), so no shared "game
+   start" reference is needed and everyone's cadence is genuinely identical.
+   If you've been away longer than one interval, you blip immediately on
+   return (tracked via localStorage, survives closing the browser) and then
+   fall back in step with the global schedule from there. */
 function scheduleNextPush(){
-  const interval = PUSH_INTERVAL[myRole];
   const lastPush = Number(localStorage.getItem('cityTagLastPush') || 0);
-  const due = lastPush + interval;
   const now = Date.now();
 
-  if(now >= due){
+  if(now - lastPush >= GLOBAL_BLIP_INTERVAL){
     nextPushAt = now; // overdue (or first-ever push) — fire immediately once we have a GPS fix
     firePushWhenReady();
   } else {
-    nextPushAt = due;
-    setTimeout(() => { firePushWhenReady(); }, due - now);
+    const nextBoundary = Math.ceil(now / GLOBAL_BLIP_INTERVAL) * GLOBAL_BLIP_INTERVAL;
+    nextPushAt = nextBoundary;
+    setTimeout(() => { firePushWhenReady(); }, nextBoundary - now);
   }
 }
 
@@ -723,8 +764,12 @@ function firePushWhenReady(){
   }
   pushMyLocation().then(() => {
     localStorage.setItem('cityTagLastPush', String(Date.now()));
-    scheduleNextPush(); // queue the next one from this real push time
+    scheduleNextPush(); // re-align to the next global boundary
   });
+}
+
+function nextGlobalBoundary(){
+  return Math.ceil(Date.now() / GLOBAL_BLIP_INTERVAL) * GLOBAL_BLIP_INTERVAL;
 }
 
 async function pushMyLocation(){
@@ -739,10 +784,10 @@ async function pushMyLocation(){
 }
 
 function tickCountdown(){
-  const secs = Math.max(0, Math.round((nextPushAt - Date.now())/1000));
+  const secs = Math.max(0, Math.round((nextGlobalBoundary() - Date.now())/1000));
   const m = Math.floor(secs/60), s = secs%60;
-  document.getElementById('nextPush').innerHTML =
-    '<span class="live-dot"></span>next blip in ' + m + 'm ' + String(s).padStart(2,'0') + 's';
+  const el = document.getElementById('globalCountdown');
+  if(el) el.innerHTML = '<span class="live-dot"></span>Next blip in ' + m + 'm ' + String(s).padStart(2,'0') + 's';
 }
 
 /* ---------- Reading everyone else from shared storage ---------- */
