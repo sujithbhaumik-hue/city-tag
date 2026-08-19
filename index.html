@@ -113,26 +113,27 @@
   #googleSignInBtn:active{transform:translate(1px,1px); box-shadow:0 0 0 var(--ink);}
   #accountRow{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
   #accountName{font-size:13px; font-weight:700; color:#6b6455;}
-  #signOutBtn, #statsBtn, #closeStatsBtn{
+  #signOutBtn, #statsBtn, #rulesBtn, #closeStatsBtn, #closeRulesBtn{
     border:1.5px solid var(--line); background:#fff; border-radius:7px; padding:6px 11px;
     font-size:12px; font-weight:700; color:var(--ink); cursor:pointer;
     transition:transform .15s, box-shadow .15s, background .15s;
   }
-  #signOutBtn:hover, #closeStatsBtn:hover{transform:translateY(-2px) scale(1.03); background:var(--paper); box-shadow:2px 3px 0 var(--line);}
-  #statsBtn{width:100%; margin-bottom:6px; border:2px solid var(--ink); font-weight:800; box-shadow:2px 2px 0 var(--ink);}
-  #statsBtn:hover{transform:translateY(-2px) scale(1.02); box-shadow:4px 5px 0 var(--ink);}
+  #signOutBtn:hover, #closeStatsBtn:hover, #closeRulesBtn:hover{transform:translateY(-2px) scale(1.03); background:var(--paper); box-shadow:2px 3px 0 var(--line);}
+  #statsBtn, #rulesBtn{width:100%; margin-bottom:6px; border:2px solid var(--ink); font-weight:800; box-shadow:2px 2px 0 var(--ink);}
+  #statsBtn:hover, #rulesBtn:hover{transform:translateY(-2px) scale(1.02); box-shadow:4px 5px 0 var(--ink);}
   #resetStatsBtn{
     width:100%; margin-top:10px; border:1.5px solid var(--tagger); background:#fff; color:var(--tagger-dark);
     border-radius:7px; padding:8px 11px; font-size:12px; font-weight:700; cursor:pointer;
     transition:transform .15s, box-shadow .15s;
   }
   #resetStatsBtn:hover{transform:translateY(-2px) scale(1.02); background:#fdeceb; box-shadow:2px 3px 0 var(--tagger);}
-  #closeStatsBtn{width:100%; margin-top:10px;}
-  #statsModal{
+  #closeStatsBtn, #closeRulesBtn{width:100%; margin-top:10px;}
+  #statsModal, #rulesModal{
     position:fixed; inset:0; z-index:2500;
     display:flex; align-items:center; justify-content:center;
     background:rgba(14,18,24,.8); padding:20px;
   }
+  #rulesModal .card{ max-width:380px; max-height:85vh; overflow-y:auto; }
   #statsBody{font-size:14px; line-height:2; color:var(--ink); margin-top:14px;}
   #statsBody b{color:var(--tagger); font-size:16px; font-weight:800;}
 
@@ -157,6 +158,19 @@
   .pill.tagger{background:var(--tagger); color:#fff;}
   .pill.runner{background:var(--runner); color:#fff;}
   #boundsStatus{font-weight:700; margin-top:4px;}
+  #activePowerStatus{margin-top:4px; font-weight:700; color:var(--tagger-dark);}
+  #nearestPower{margin-top:4px; color:#6b6455; font-size:11.5px;}
+  .power-entry{
+    background:var(--paper); border:1.5px solid var(--line); border-radius:9px;
+    padding:10px 12px; margin:10px 0;
+  }
+  .power-entry b{display:block; margin-bottom:3px; font-size:14px;}
+  .power-entry p{margin:0; font-size:12.5px; color:#6b6455;}
+  .powerup-popup .collect-btn{
+    margin-top:6px; padding:7px 14px; border:2px solid var(--ink); border-radius:7px;
+    background:var(--amber); color:var(--ink); font-weight:800; font-size:12px; cursor:pointer;
+    text-transform:uppercase; letter-spacing:.3px; box-shadow:2px 2px 0 var(--ink);
+  }
   #boundsStatus.in{color:#2e7d32;}
   #boundsStatus.out{color:var(--tagger-dark);}
   #globalCountdown{
@@ -202,7 +216,9 @@
   body.low-power #googleSignInBtn:hover,
   body.low-power #signOutBtn:hover,
   body.low-power #closeStatsBtn:hover,
+  body.low-power #closeRulesBtn:hover,
   body.low-power #statsBtn:hover,
+  body.low-power #rulesBtn:hover,
   body.low-power #resetStatsBtn:hover,
   body.low-power #endGameBtn:hover,
   body.low-power .style-btn:hover,
@@ -276,6 +292,23 @@
     100%{transform:scale(2.4); opacity:0;}
   }
 
+  /* Powerup markers: pulsing glow so they're easy to spot on the map */
+  .powerup-marker-wrap{ position:relative; width:26px; height:26px; }
+  .powerup-marker-dot{
+    position:absolute; top:5px; left:5px; width:16px; height:16px; border-radius:50%;
+    background:#fff; border:2px solid var(--amber); display:flex; align-items:center;
+    justify-content:center; font-size:11px; box-shadow:0 1px 4px rgba(0,0,0,.35);
+  }
+  .powerup-marker-glow{
+    position:absolute; inset:0; border-radius:50%; background:var(--amber);
+    opacity:.35; animation:powerup-glow 1.6s ease-in-out infinite;
+  }
+  @keyframes powerup-glow{
+    0%,100%{transform:scale(.8); opacity:.35;}
+    50%{transform:scale(1.15); opacity:.15;}
+  }
+  body.low-power .powerup-marker-glow{ display:none !important; }
+
   /* Stamp-style banner for tag events */
   #flashBanner.stamp{
     font-family:'Anton',sans-serif; font-size:20px; letter-spacing:1px;
@@ -308,6 +341,7 @@
         <button id="signOutBtn" type="button">Sign out</button>
       </div>
       <button id="statsBtn" type="button">📊 My stats</button>
+      <button id="rulesBtn" type="button">📖 Powers &amp; Rules</button>
 
       <label for="nameInput">Your name</label>
       <input id="nameInput" type="text" placeholder="e.g. Jess" maxlength="20" autocomplete="off">
@@ -345,6 +379,28 @@
   </div>
 </div>
 
+<div id="rulesModal" style="display:none;">
+  <div class="card">
+    <div class="hazard-stripe"></div>
+    <div class="card-body">
+    <h1>Powers <span>&amp; Rules</span></h1>
+    <div id="rulesBody" class="sub" style="text-transform:none; font-weight:500; letter-spacing:0; line-height:1.6;">
+      <p><b>Powerups</b> spawn randomly around the map. Tap one to see what it does and how long it's got left, then hit Collect to grab it.</p>
+      <div class="power-entry">
+        <b>🫥 Invisibility</b>
+        <p>Removes you from everyone else's map for a while — you keep playing and pushing blips as normal, other players just can't see your dot.</p>
+      </div>
+      <div class="power-entry">
+        <b>🧨 Sabotage</b>
+        <p>Drops a temporary red zone somewhere random on the map, visible to everyone. Anyone inside it gets the same warning as stepping outside the main boundary.</p>
+      </div>
+      <p class="sub" style="text-transform:none; font-weight:500; opacity:.65; margin-top:14px;">More powers are on the way — this list will grow.</p>
+    </div>
+    <button id="closeRulesBtn" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
 <div id="map"></div>
 
 <div id="globalCountdown" style="display:none;"><span class="live-dot"></span>Next blip in —</div>
@@ -353,6 +409,8 @@
   <div class="panel" id="mePanel">
     <b id="meName">—</b><span class="pill" id="mePill">—</span>
     <div id="boundsStatus">checking location…</div>
+    <div id="activePowerStatus" style="display:none;"></div>
+    <div id="nearestPower" style="display:none;"></div>
     <button id="endGameBtn" type="button">End game</button>
   </div>
 </div>
@@ -474,6 +532,18 @@ const GLOBAL_BLIP_INTERVAL = 5 * 60 * 1000;
 const POLL_INTERVAL = 20 * 1000;       // how often we refresh the map from shared storage
 const STALE_AFTER   = 25 * 60 * 1000;  // hide a player if unseen this long
 
+/* ---------- Powerups ---------- */
+const POWERUP_TYPES = {
+  invisibility: { label: 'Invisibility', icon: '🫥', duration: 4 * 60 * 1000,
+    blurb: "You're hidden from everyone else's map." },
+  sabotage: { label: 'Sabotage', icon: '🧨', duration: 5 * 60 * 1000, radius: 100,
+    worldEffect: true, blurb: "Creates a temporary restricted zone wherever you're standing." },
+};
+const POWERUP_TARGET_COUNT = 3;       // how many should be sitting on the map at once
+const POWERUP_LIFESPAN = 8 * 60 * 1000; // how long an unclaimed powerup sits before expiring
+const POWERUP_CHECK_INTERVAL = 15 * 1000;
+const POWERUP_SPAWN_CHANCE = 0.35;    // per check, per client, when below target count
+
 /* ---------- State ---------- */
 let myRole = 'tagger';
 let myName = '';
@@ -481,6 +551,11 @@ let myId = '';           // now the Firebase Auth UID — stable across devices/
 let myCurrentPos = null;    // latest raw GPS reading (kept fresh locally)
 let map, boundaryLayer, meMarker;
 const otherMarkers = {};    // id -> L.marker
+const powerupMarkers = {};  // id -> L.marker
+let myActivePower = null;   // { type, activatedAt, expiresAt } or null
+let lastKnownPowerups = {}; // cached from last Firebase read, used for nearest-power HUD
+const sabotageMarkers = {}; // id -> L.circle
+let lastKnownZones = {};
 
 /* ---------- Auth ---------- */
 document.getElementById('googleSignInBtn').addEventListener('click', () => {
@@ -513,6 +588,12 @@ auth.onAuthStateChanged(user => {
 document.getElementById('statsBtn').addEventListener('click', showStats);
 document.getElementById('closeStatsBtn').addEventListener('click', () => {
   document.getElementById('statsModal').style.display = 'none';
+});
+document.getElementById('rulesBtn').addEventListener('click', () => {
+  document.getElementById('rulesModal').style.display = 'flex';
+});
+document.getElementById('closeRulesBtn').addEventListener('click', () => {
+  document.getElementById('rulesModal').style.display = 'none';
 });
 document.getElementById('resetStatsBtn').addEventListener('click', async () => {
   if(!confirm('Reset your stats (games played, tags made, times tagged) back to zero? This can\'t be undone.')) return;
@@ -591,7 +672,12 @@ function startGame(){
   scheduleNextPush();
   setInterval(refreshOthers, POLL_INTERVAL);
   setInterval(tickCountdown, 1000);
+  setInterval(refreshPowerups, POWERUP_CHECK_INTERVAL);
+  setInterval(refreshSabotageZones, POWERUP_CHECK_INTERVAL);
+  setInterval(updateActivePowerStatusHud, 1000);
   refreshOthers();
+  refreshPowerups();
+  refreshSabotageZones();
 }
 
 document.getElementById('endGameBtn').addEventListener('click', async () => {
@@ -716,6 +802,8 @@ function initMap(){
   map.createPane('trainLinesPane').style.zIndex = 450;
   map.createPane('trainStationsPane').style.zIndex = 460;
   map.createPane('playersPane').style.zIndex = 470;
+  map.createPane('powerupsPane').style.zIndex = 465;
+  map.createPane('sabotagePane').style.zIndex = 455;
   // Canvas renders many-point paths far more cheaply than individual SVG
   // elements on every zoom frame — the single biggest zoom-lag fix available
   // here, given the train lines carry over a thousand points combined.
@@ -778,9 +866,18 @@ function drawMe(){
     meMarker.setLatLng([lat,lng]);
   }
   const inside = pointInBoundary(lat, lng);
+  const inSabotage = inAnySabotageZone(lat, lng);
   const statusEl = document.getElementById('boundsStatus');
-  statusEl.textContent = inside ? '✅ Inside the boundary' : '⚠️ Outside the boundary!';
-  statusEl.className = inside ? 'in' : 'out';
+  if(!inside){
+    statusEl.textContent = '⚠️ Outside the boundary!';
+    statusEl.className = 'out';
+  } else if(inSabotage){
+    statusEl.textContent = '🧨 Inside a sabotage zone!';
+    statusEl.className = 'out';
+  } else {
+    statusEl.textContent = '✅ Inside the boundary';
+    statusEl.className = 'in';
+  }
 }
 
 /* ---------- Pushing my location on the global blip cadence ---------- */
@@ -821,11 +918,13 @@ function nextGlobalBoundary(){
 async function pushMyLocation(){
   if(!myCurrentPos) return;
   try{
-    await db.ref('players/' + myId).set({
+    const payload = {
       name: myName, role: myRole,
       lat: myCurrentPos.lat, lng: myCurrentPos.lng,
       ts: Date.now()
-    });
+    };
+    if(myActivePower && myActivePower.expiresAt > Date.now()) payload.activePower = myActivePower;
+    await db.ref('players/' + myId).set(payload);
   }catch(e){ console.error('push failed', e); }
 }
 
@@ -859,6 +958,12 @@ async function refreshOthers(){
       if(id === myId) continue;
       if(!data) continue;
       if(Date.now() - data.ts > STALE_AFTER) continue; // too old, drop it
+
+      // Invisibility: skip rendering entirely while it's active for them.
+      if(data.activePower && data.activePower.type === 'invisibility' && data.activePower.expiresAt > Date.now()){
+        if(otherMarkers[key]){ map.removeLayer(otherMarkers[key]); delete otherMarkers[key]; }
+        continue;
+      }
 
       seen.add(key);
       const ageMin = Math.max(0, Math.round((Date.now() - data.ts)/60000));
@@ -953,6 +1058,214 @@ function showBanner(text){
   el.style.animation = '';
   clearTimeout(el._hideTimer);
   el._hideTimer = setTimeout(() => { el.style.display = 'none'; }, 3500);
+}
+
+/* ---------- Powerups ---------- */
+function randomPointInBoundary(){
+  const lats = BOUNDARY.map(p => p[0]), lngs = BOUNDARY.map(p => p[1]);
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+  for(let tries = 0; tries < 40; tries++){
+    const lat = minLat + Math.random() * (maxLat - minLat);
+    const lng = minLng + Math.random() * (maxLng - minLng);
+    if(pointInBoundary(lat, lng)) return [lat, lng];
+  }
+  return CENTER; // fallback, shouldn't normally hit this
+}
+
+function distMeters(lat1,lng1,lat2,lng2){
+  const dlat = (lat2-lat1)*111320;
+  const dlng = (lng2-lng1)*111320*Math.cos((lat1+lat2)/2 * Math.PI/180);
+  return Math.hypot(dlat,dlng);
+}
+
+async function refreshPowerups(){
+  try{
+    const snap = await db.ref('powerups').once('value');
+    const all = snap.val() || {};
+    const now = Date.now();
+    const active = {};
+    const seen = new Set();
+
+    for(const [id, p] of Object.entries(all)){
+      if(!p || p.expiresAt < now){
+        db.ref('powerups/' + id).remove(); // opportunistic cleanup, harmless if it races
+        continue;
+      }
+      active[id] = p;
+      seen.add(id);
+      const def = POWERUP_TYPES[p.type];
+      if(!def) continue;
+
+      if(powerupMarkers[id]){
+        powerupMarkers[id].setLatLng([p.lat, p.lng]);
+      } else {
+        const icon = L.divIcon({
+          className: '',
+          html: '<div class="powerup-marker-wrap"><div class="powerup-marker-glow"></div>'
+              + '<div class="powerup-marker-dot">' + def.icon + '</div></div>',
+          iconSize: [26, 26], iconAnchor: [13, 13]
+        });
+        const marker = L.marker([p.lat, p.lng], { icon, pane: 'powerupsPane' }).addTo(map);
+        marker.bindPopup(buildPowerupPopup(id, p));
+        marker.on('popupopen', () => marker.setPopupContent(buildPowerupPopup(id, p)));
+        powerupMarkers[id] = marker;
+      }
+    }
+
+    Object.keys(powerupMarkers).forEach(id => {
+      if(!seen.has(id)){
+        map.removeLayer(powerupMarkers[id]);
+        delete powerupMarkers[id];
+      }
+    });
+
+    lastKnownPowerups = active;
+    updateNearestPowerHud();
+
+    // Maintain a rough target count on the map — any client can spawn, so a
+    // random per-check chance keeps multiple simultaneous players from all
+    // spawning at once when the count dips low.
+    if(Object.keys(active).length < POWERUP_TARGET_COUNT && Math.random() < POWERUP_SPAWN_CHANCE){
+      spawnRandomPowerup();
+    }
+  }catch(e){ console.error('powerup refresh failed', e); }
+}
+
+function buildPowerupPopup(id, p){
+  const def = POWERUP_TYPES[p.type];
+  const secsLeft = Math.max(0, Math.round((p.expiresAt - Date.now())/1000));
+  const m = Math.floor(secsLeft/60), s = secsLeft%60;
+  return '<div class="powerup-popup"><b>' + def.icon + ' ' + def.label + '</b><br>'
+    + def.blurb + '<br>Expires in ' + m + 'm ' + String(s).padStart(2,'0') + 's'
+    + '<br><button class="collect-btn" onclick="collectPowerup(\'' + id + '\')">Collect</button></div>';
+}
+
+/* ---------- Sabotage zones (and future world-effect powers) ---------- */
+async function refreshSabotageZones(){
+  try{
+    const snap = await db.ref('sabotageZones').once('value');
+    const all = snap.val() || {};
+    const now = Date.now();
+    const active = {};
+    const seen = new Set();
+
+    for(const [id, z] of Object.entries(all)){
+      if(!z || z.expiresAt < now){
+        db.ref('sabotageZones/' + id).remove(); // opportunistic cleanup
+        continue;
+      }
+      active[id] = z;
+      seen.add(id);
+
+      if(sabotageMarkers[id]){
+        sabotageMarkers[id].setLatLng([z.lat, z.lng]);
+      } else {
+        const circle = L.circle([z.lat, z.lng], {
+          pane: 'sabotagePane', radius: z.radius,
+          color: '#d1352f', weight: 3, dashArray: '6 5',
+          fillColor: '#d1352f', fillOpacity: 0.22
+        }).addTo(map);
+        circle.bindPopup(buildZonePopup(id, z));
+        circle.on('popupopen', () => circle.setPopupContent(buildZonePopup(id, z)));
+        sabotageMarkers[id] = circle;
+      }
+    }
+
+    Object.keys(sabotageMarkers).forEach(id => {
+      if(!seen.has(id)){
+        map.removeLayer(sabotageMarkers[id]);
+        delete sabotageMarkers[id];
+      }
+    });
+
+    lastKnownZones = active;
+  }catch(e){ console.error('sabotage zone refresh failed', e); }
+}
+
+function buildZonePopup(id, z){
+  const def = POWERUP_TYPES[z.type];
+  const secsLeft = Math.max(0, Math.round((z.expiresAt - Date.now())/1000));
+  const m = Math.floor(secsLeft/60), s = secsLeft%60;
+  return '<div class="powerup-popup"><b>' + def.icon + ' ' + def.label + ' Zone</b><br>'
+    + 'Set by ' + escapeHtml(z.createdBy) + '<br>Clears in ' + m + 'm ' + String(s).padStart(2,'0') + 's</div>';
+}
+
+function inAnySabotageZone(lat, lng){
+  return Object.values(lastKnownZones).some(z => distMeters(lat, lng, z.lat, z.lng) <= z.radius);
+}
+
+async function spawnRandomPowerup(){
+  const types = Object.keys(POWERUP_TYPES);
+  const type = types[Math.floor(Math.random() * types.length)];
+  const [lat, lng] = randomPointInBoundary();
+  const now = Date.now();
+  try{
+    await db.ref('powerups').push({ type, lat, lng, spawnedAt: now, expiresAt: now + POWERUP_LIFESPAN });
+  }catch(e){ console.error('spawn failed', e); }
+}
+
+async function collectPowerup(id){
+  const p = lastKnownPowerups[id];
+  if(!p){ return; }
+  const def = POWERUP_TYPES[p.type];
+  const now = Date.now();
+
+  try{
+    await db.ref('powerups/' + id).remove();
+
+    if(def.worldEffect){
+      // World-effect powers (like Sabotage) don't attach to the collector — they
+      // create something everyone can see/interact with, placed randomly in bounds.
+      const [zLat, zLng] = randomPointInBoundary();
+      await db.ref('sabotageZones').push({
+        type: p.type, lat: zLat, lng: zLng,
+        radius: def.radius, createdBy: myName, createdAt: now, expiresAt: now + def.duration
+      });
+    } else {
+      myActivePower = { type: p.type, activatedAt: now, expiresAt: now + def.duration };
+      await db.ref('players/' + myId + '/activePower').set(myActivePower);
+    }
+  }catch(e){ console.error('collect failed', e); }
+
+  map.closePopup();
+  showBanner(def.icon + ' ' + def.label + ' activated!');
+  updateActivePowerStatusHud();
+}
+
+function updateActivePowerStatusHud(){
+  const el = document.getElementById('activePowerStatus');
+  if(!myActivePower || myActivePower.expiresAt <= Date.now()){
+    if(myActivePower){ // just expired — clear it server-side too
+      myActivePower = null;
+      db.ref('players/' + myId + '/activePower').remove();
+    }
+    el.style.display = 'none';
+    return;
+  }
+  const def = POWERUP_TYPES[myActivePower.type];
+  const secsLeft = Math.max(0, Math.round((myActivePower.expiresAt - Date.now())/1000));
+  const m = Math.floor(secsLeft/60), s = secsLeft%60;
+  el.style.display = 'block';
+  el.textContent = def.icon + ' ' + def.label + ' — ' + m + 'm ' + String(s).padStart(2,'0') + 's left';
+}
+
+function updateNearestPowerHud(){
+  const el = document.getElementById('nearestPower');
+  const entries = Object.values(lastKnownPowerups);
+  if(!myCurrentPos || entries.length === 0){
+    el.style.display = 'none';
+    return;
+  }
+  let nearest = null, nearestDist = Infinity;
+  entries.forEach(p => {
+    const d = distMeters(myCurrentPos.lat, myCurrentPos.lng, p.lat, p.lng);
+    if(d < nearestDist){ nearestDist = d; nearest = p; }
+  });
+  if(!nearest) { el.style.display = 'none'; return; }
+  const def = POWERUP_TYPES[nearest.type];
+  el.style.display = 'block';
+  el.textContent = '📍 Nearest power: ' + def.icon + ' ' + Math.round(nearestDist) + 'm away';
 }
 
 function escapeHtml(str){
