@@ -162,9 +162,10 @@
     gap:10px; pointer-events:none;
   }
   .panel{
-    background:rgba(244,242,236,.97); border-radius:12px; padding:10px 14px;
-    border:1.5px solid var(--line);
-    box-shadow:0 4px 14px rgba(20,24,31,.15); pointer-events:auto;
+    background:rgba(244,242,236,.62); backdrop-filter:blur(14px) saturate(160%); -webkit-backdrop-filter:blur(14px) saturate(160%);
+    border-radius:18px; padding:10px 14px;
+    border:1px solid rgba(255,255,255,.5);
+    box-shadow:0 6px 20px rgba(20,24,31,.14), inset 0 1px 0 rgba(255,255,255,.45); pointer-events:auto;
     font-size:12.5px; line-height:1.5;
   }
   #mePanel b{font-weight:800; font-size:15px;}
@@ -178,23 +179,25 @@
   #activePowerStatus{margin-top:4px; font-weight:700; color:var(--tagger-dark);}
   #nearestPower{margin-top:4px; color:#6b6455; font-size:11.5px;}
   .power-entry{
-    background:var(--paper); border:1.5px solid var(--line); border-radius:9px;
+    background:rgba(255,255,255,.4); backdrop-filter:blur(10px); border:1.5px solid var(--glass-border); border-radius:16px;
     padding:10px 12px; margin:10px 0;
   }
   .power-entry b{display:block; margin-bottom:3px; font-size:14px;}
   .power-entry p{margin:0; font-size:12.5px; color:#6b6455;}
   .powerup-popup .collect-btn{
-    margin-top:6px; padding:7px 14px; border:2px solid var(--ink); border-radius:7px;
-    background:var(--amber); color:var(--ink); font-weight:800; font-size:12px; cursor:pointer;
-    text-transform:uppercase; letter-spacing:.3px; box-shadow:2px 2px 0 var(--ink);
+    margin-top:6px; padding:7px 14px; border:none; border-radius:14px;
+    background:linear-gradient(180deg, rgba(255,196,64,.95), rgba(242,169,0,.9));
+    color:var(--ink); font-weight:800; font-size:12px; cursor:pointer;
+    text-transform:uppercase; letter-spacing:.3px; box-shadow:0 4px 12px rgba(242,169,0,.4);
   }
   #boundsStatus.in{color:#2e7d32;}
   #boundsStatus.out{color:var(--tagger-dark);}
   #globalCountdown{
     position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:1001;
-    background:rgba(20,24,31,.92); color:#fff; padding:7px 16px; border-radius:20px;
+    background:rgba(20,24,31,.65); backdrop-filter:blur(14px) saturate(160%); -webkit-backdrop-filter:blur(14px) saturate(160%);
+    color:#fff; padding:7px 16px; border-radius:20px; border:1px solid rgba(255,255,255,.15);
     font-size:12.5px; font-weight:700; display:flex; align-items:center; gap:6px;
-    box-shadow:0 4px 14px rgba(0,0,0,.25); pointer-events:none;
+    box-shadow:0 6px 20px rgba(0,0,0,.3); pointer-events:none;
   }
   #globalCountdown .live-dot{
     width:7px; height:7px; border-radius:50%; background:var(--tagger); flex-shrink:0;
@@ -202,16 +205,18 @@
   }
   @keyframes live-blink{0%,100%{opacity:1;} 50%{opacity:.25;}}
   #endGameBtn{
-    margin-top:8px; width:100%; border:1.5px solid var(--line); background:#fff; color:#6b6455;
-    border-radius:7px; padding:6px 10px; font-size:11.5px; font-weight:700; cursor:pointer;
+    margin-top:8px; width:100%; border:1px solid rgba(255,255,255,.4); background:rgba(255,255,255,.3);
+    backdrop-filter:blur(8px); color:#6b6455;
+    border-radius:12px; padding:6px 10px; font-size:11.5px; font-weight:700; cursor:pointer;
     transition:transform .15s, box-shadow .15s, background .15s, color .15s, border-color .15s;
   }
-  #endGameBtn:hover{transform:translateY(-2px) scale(1.03); background:#fdeceb; color:var(--tagger-dark); border-color:var(--tagger); box-shadow:2px 3px 0 var(--tagger);}
+  #endGameBtn:hover{transform:translateY(-2px); background:rgba(224,51,43,.15); color:var(--tagger-dark); border-color:rgba(224,51,43,.4); box-shadow:0 6px 16px rgba(224,51,43,.18);}
 
   #legend{
     position:fixed; bottom:14px; left:12px; z-index:1000;
-    background:rgba(244,242,236,.97); border:1.5px solid var(--line); border-radius:10px; padding:8px 12px;
-    font-size:11.5px; box-shadow:0 4px 14px rgba(20,24,31,.15);
+    background:rgba(244,242,236,.62); backdrop-filter:blur(14px) saturate(160%); -webkit-backdrop-filter:blur(14px) saturate(160%);
+    border:1px solid rgba(255,255,255,.5); border-radius:16px; padding:8px 12px;
+    font-size:11.5px; box-shadow:0 6px 20px rgba(20,24,31,.14), inset 0 1px 0 rgba(255,255,255,.45);
   }
   #legend div{display:flex; align-items:center; gap:6px; margin:3px 0;}
   .dot{width:10px; height:10px; border-radius:50%; display:inline-block; border:2px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.2);}
@@ -225,9 +230,18 @@
      killing transition alone still let buttons jump instantly to their
      enlarged state, which wasn't actually fixing anything. Resetting
      transform is what matters both visually and for performance, since
-     scale/translate on hover is what forces a repaint. */
+     scale/translate on hover is what forces a repaint. Backdrop-filter blur
+     over the live panning map is the other real cost, so low power mode
+     drops it entirely on every map-overlay glass surface, falling back to a
+     plain near-opaque background instead. */
   body.low-power *{ animation:none !important; transition:none !important; }
   body.low-power .me-marker-ring{ display:none !important; }
+  body.low-power .panel, body.low-power #legend, body.low-power #styleSwitch,
+  body.low-power #globalCountdown, body.low-power #recenterBtn, body.low-power #endGameBtn{
+    backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+    background:rgba(244,242,236,.96) !important;
+  }
+  body.low-power #globalCountdown{ background:rgba(20,24,31,.94) !important; }
   body.low-power .role-btn:hover,
   body.low-power #startBtn:hover,
   body.low-power #googleSignInBtn:hover,
@@ -246,28 +260,30 @@
 
   #recenterBtn{
     position:fixed; bottom:64px; right:12px; z-index:1000;
-    width:38px; height:38px; border-radius:50%; border:1.5px solid var(--line);
-    background:rgba(244,242,236,.97); font-size:17px; cursor:pointer;
-    box-shadow:0 4px 14px rgba(20,24,31,.15);
+    width:38px; height:38px; border-radius:50%; border:1px solid rgba(255,255,255,.5);
+    background:rgba(244,242,236,.62); backdrop-filter:blur(14px) saturate(160%); -webkit-backdrop-filter:blur(14px) saturate(160%);
+    font-size:17px; cursor:pointer;
+    box-shadow:0 6px 18px rgba(20,24,31,.16), inset 0 1px 0 rgba(255,255,255,.5);
     display:flex; align-items:center; justify-content:center;
     transition:transform .15s;
   }
-  #recenterBtn:hover{transform:scale(1.1);}
+  #recenterBtn:hover{transform:scale(1.08);}
   #recenterBtn:active{transform:scale(0.95);}
 
   #styleSwitch{
     position:fixed; bottom:14px; right:12px; z-index:1000;
-    display:flex; background:rgba(244,242,236,.97); border:1.5px solid var(--line); border-radius:10px; padding:4px;
-    box-shadow:0 4px 14px rgba(20,24,31,.15); gap:3px;
+    display:flex; background:rgba(244,242,236,.62); backdrop-filter:blur(14px) saturate(160%); -webkit-backdrop-filter:blur(14px) saturate(160%);
+    border:1px solid rgba(255,255,255,.5); border-radius:16px; padding:4px;
+    box-shadow:0 6px 20px rgba(20,24,31,.14), inset 0 1px 0 rgba(255,255,255,.45); gap:3px;
   }
   .style-btn{
-    border:none; background:transparent; padding:6px 11px; border-radius:7px;
-    font-size:11.5px; font-weight:700; color:#6b6455; cursor:pointer;
+    border:none; background:transparent; padding:6px 11px; border-radius:12px;
+    font-size:11.5px; font-weight:700; color:#5a5448; cursor:pointer;
     transition:transform .15s, background .15s, color .15s;
   }
-  .style-btn:hover{transform:scale(1.08); background:var(--line); color:var(--ink);}
-  .style-btn.active{background:var(--ink); color:#fff;}
-  .style-btn.active:hover{background:var(--ink); transform:scale(1.08);}
+  .style-btn:hover{background:rgba(255,255,255,.5); color:var(--ink);}
+  .style-btn.active{background:rgba(20,24,31,.85); color:#fff;}
+  .style-btn.active:hover{background:rgba(20,24,31,.85);}
 
   .leaflet-popup-content{font-size:12.5px; margin:8px 10px;}
   .leaflet-popup-content b{font-size:13px;}
