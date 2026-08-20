@@ -31,11 +31,11 @@
     --amber:#f2a900;
     --unknown:#6b6f76;
     --line:#dcd7cb;
-    --glass-bg:rgba(255,255,255,.5);
-    --glass-bg-strong:rgba(255,255,255,.68);
-    --glass-border:rgba(255,255,255,.55);
-    --glass-shadow:0 8px 32px rgba(20,24,31,.16), inset 0 1px 0 rgba(255,255,255,.55);
-    --glass-blur:22px;
+    --dglass-bg:rgba(24,20,22,.62);
+    --dglass-bg-strong:rgba(28,24,26,.8);
+    --dglass-border:rgba(255,255,255,.1);
+    --text-hi:#f4f1ec;
+    --text-lo:#a8a29a;
   }
   *{box-sizing:border-box;}
   html,body{height:100%;margin:0;}
@@ -52,9 +52,8 @@
     letter-spacing:.5px;
   }
   .hazard-stripe{
-    height:4px; margin-bottom:2px;
-    background:linear-gradient(90deg, transparent, var(--amber) 30%, var(--tagger) 70%, transparent);
-    opacity:.75;
+    height:10px;
+    background:repeating-linear-gradient(45deg, var(--amber) 0 10px, var(--ink) 10px 20px);
   }
 
   /* ---- Setup screen ---- */
@@ -62,97 +61,131 @@
     position:fixed; inset:0; z-index:2000;
     display:flex; align-items:center; justify-content:center;
     background:
-      radial-gradient(circle at 25% 15%, rgba(224,51,43,.25), transparent 45%),
-      radial-gradient(circle at 80% 85%, rgba(34,119,196,.22), transparent 50%),
-      linear-gradient(160deg,#0b0e14,#1b2432);
-    padding:20px;
+      radial-gradient(ellipse at 50% 105%, rgba(224,51,43,.45), transparent 55%),
+      radial-gradient(circle at 15% 25%, rgba(242,169,0,.06), transparent 30%),
+      repeating-linear-gradient(60deg, rgba(255,255,255,.03) 0 1.5px, transparent 1.5px 30px),
+      repeating-linear-gradient(-60deg, rgba(255,255,255,.03) 0 1.5px, transparent 1.5px 30px),
+      linear-gradient(165deg, #08090c, #0f1114 55%, #121012);
+    padding:20px; position:fixed; overflow:hidden;
+  }
+  .ember{
+    position:absolute; bottom:0; border-radius:50%; background:var(--amber);
+    box-shadow:0 0 6px 2px rgba(242,169,0,.7);
+    animation:ember-rise linear infinite;
+    opacity:0;
+  }
+  @keyframes ember-rise{
+    0%{transform:translateY(0); opacity:0;}
+    10%{opacity:.85;}
+    90%{opacity:.4;}
+    100%{transform:translateY(-380px); opacity:0;}
+  }
+  body.low-power .ember{ display:none !important; }
+  .badge-icon{
+    width:64px; height:64px; margin:0 auto 4px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #2a1416, var(--ink) 70%);
+    border:3px solid var(--tagger);
+    box-shadow:0 0 0 4px rgba(20,24,31,.9), 0 0 22px rgba(224,51,43,.6);
+    display:flex; align-items:center; justify-content:center; font-size:28px;
+    animation:badge-glow 2.6s ease-in-out infinite;
+  }
+  @keyframes badge-glow{
+    0%,100%{box-shadow:0 0 0 4px rgba(20,24,31,.9), 0 0 18px rgba(224,51,43,.5);}
+    50%{box-shadow:0 0 0 4px rgba(20,24,31,.9), 0 0 32px rgba(224,51,43,.85);}
   }
   #setup .card-body{padding:24px 26px 24px;}
   #setup h1, #statsModal h1, #rulesModal h1{
-    font-size:38px; line-height:.95; margin:14px 0 2px;
+    font-size:38px; line-height:.95; margin:14px 0 2px; color:var(--text-hi);
   }
   #setup h1 span, #statsModal h1 span, #rulesModal h1 span{color:var(--tagger); -webkit-text-stroke:0; }
   #setup h1 .outline{color:var(--paper); -webkit-text-stroke:2px var(--ink); text-shadow:none;}
-  #setup p.sub{margin:0 0 18px; font-size:13px; font-weight:700; letter-spacing:.5px; color:#5a5448; text-transform:uppercase;}
-  label{display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#5a5448; margin:16px 0 6px;}
+  #setup p.sub{margin:0 0 18px; font-size:13px; font-weight:700; letter-spacing:.5px; color:var(--text-lo); text-transform:uppercase;}
+  label{display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--text-lo); margin:16px 0 6px;}
   input[type=text]{
-    width:100%; padding:11px 12px; border-radius:14px; border:1.5px solid var(--glass-border);
-    font-size:15px; background:rgba(255,255,255,.55); backdrop-filter:blur(8px); color:var(--ink);
+    width:100%; padding:11px 12px; border-radius:10px; border:1.5px solid var(--dglass-border);
+    font-size:15px; background:rgba(255,255,255,.06); color:var(--text-hi);
   }
-  input[type=text]:focus{outline:none; border-color:var(--amber); background:rgba(255,255,255,.75);}
+  input[type=text]::placeholder{color:#5f5a54;}
+  input[type=text]:focus{outline:none; border-color:var(--tagger); background:rgba(255,255,255,.09);}
   .role-toggle{display:flex; gap:10px; margin-top:8px;}
   .role-btn{
-    flex:1; padding:16px 8px; border-radius:20px; border:1.5px solid var(--glass-border);
-    background:rgba(255,255,255,.4); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-    cursor:pointer; font-weight:700; font-size:13px;
+    flex:1; padding:16px 8px; border-radius:14px; border:1.5px solid var(--dglass-border);
+    background:rgba(255,255,255,.05); cursor:pointer; font-weight:700; font-size:13px; color:var(--text-hi);
     display:flex; flex-direction:column; align-items:center; gap:6px;
-    transition:transform .15s, box-shadow .15s, background .15s;
-    box-shadow:0 4px 14px rgba(20,24,31,.1), inset 0 1px 0 rgba(255,255,255,.5);
+    transition:transform .15s, box-shadow .15s, border-color .15s, background .15s;
   }
   .role-btn .role-icon{font-size:26px; line-height:1;}
-  .role-btn small{font-weight:600; font-size:11px; color:#5a5448;}
-  .role-btn:hover{transform:translateY(-3px); box-shadow:0 8px 22px rgba(20,24,31,.16), inset 0 1px 0 rgba(255,255,255,.6);}
-  .role-btn:active{transform:translateY(0); box-shadow:0 2px 8px rgba(20,24,31,.12), inset 0 1px 0 rgba(255,255,255,.4);}
-  .role-btn.active[data-role="tagger"]{border-color:rgba(224,51,43,.55); background:rgba(224,51,43,.16); color:var(--tagger-dark);}
-  .role-btn.active[data-role="runner"]{border-color:rgba(34,119,196,.55); background:rgba(34,119,196,.16); color:var(--runner-dark);}
+  .role-btn small{font-weight:600; font-size:11px; color:var(--text-lo);}
+  .role-btn:hover{transform:translateY(-2px); background:rgba(255,255,255,.08);}
+  .role-btn:active{transform:translateY(0);}
+  .role-btn.active[data-role="tagger"]{border-color:var(--tagger); background:rgba(224,51,43,.16); color:#ff9d92; box-shadow:0 0 16px rgba(224,51,43,.35);}
+  .role-btn.active[data-role="runner"]{border-color:var(--runner); background:rgba(34,119,196,.18); color:#8fc4ef; box-shadow:0 0 16px rgba(34,119,196,.35);}
+  .role-btn.active small{color:inherit; opacity:.85;}
   #startBtn{
-    width:100%; margin-top:22px; padding:15px; border:1.5px solid rgba(242,169,0,.6); border-radius:20px;
-    background:linear-gradient(180deg, rgba(255,196,64,.85), rgba(242,169,0,.75));
-    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-    color:var(--ink); font-weight:800; font-size:17px; letter-spacing:.3px;
-    cursor:pointer; box-shadow:0 6px 20px rgba(242,169,0,.35), inset 0 1px 0 rgba(255,255,255,.6);
+    width:100%; margin-top:22px; padding:15px; border-radius:999px;
+    border:1.5px solid transparent;
+    background:
+      linear-gradient(rgba(20,16,17,.9), rgba(20,16,17,.9)) padding-box,
+      linear-gradient(120deg, var(--tagger), var(--amber)) border-box;
+    color:var(--text-hi); font-weight:800; font-size:17px; letter-spacing:.3px;
+    cursor:pointer; box-shadow:0 0 22px rgba(224,51,43,.4);
     transition:transform .15s, box-shadow .15s;
   }
-  #startBtn:hover{transform:translateY(-3px); box-shadow:0 10px 26px rgba(242,169,0,.4), inset 0 1px 0 rgba(255,255,255,.7);}
-  #startBtn:active{transform:translateY(0); box-shadow:0 3px 10px rgba(242,169,0,.3), inset 0 1px 0 rgba(255,255,255,.5);}
+  #startBtn:hover{transform:translateY(-2px); box-shadow:0 0 30px rgba(224,51,43,.55);}
+  #startBtn:active{transform:translateY(0); box-shadow:0 0 14px rgba(224,51,43,.35);}
   #startBtn:disabled{opacity:.4; cursor:not-allowed;}
-  #setupError{color:var(--tagger-dark); font-size:12.5px; margin-top:10px; min-height:14px; font-weight:700;}
+  #setupError{color:#ff7a70; font-size:12.5px; margin-top:10px; min-height:14px; font-weight:700;}
 
   #googleSignInBtn{
-    width:100%; padding:13px; border:1.5px solid var(--glass-border); border-radius:16px;
-    background:rgba(255,255,255,.5); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-    color:var(--ink); font-weight:700; font-size:14px; cursor:pointer;
-    transition:transform .15s, box-shadow .15s; box-shadow:0 4px 14px rgba(20,24,31,.1), inset 0 1px 0 rgba(255,255,255,.5);
+    width:100%; padding:13px; border:1.5px solid var(--dglass-border); border-radius:999px;
+    background:rgba(255,255,255,.06); color:var(--text-hi); font-weight:700; font-size:14px; cursor:pointer;
+    transition:transform .15s, background .15s;
   }
-  #googleSignInBtn:hover{transform:translateY(-2px); box-shadow:0 8px 20px rgba(20,24,31,.15), inset 0 1px 0 rgba(255,255,255,.6);}
+  #googleSignInBtn:hover{transform:translateY(-2px); background:rgba(255,255,255,.1);}
   #googleSignInBtn:active{transform:translateY(0);}
   #accountRow{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
-  #accountName{font-size:13px; font-weight:700; color:#6b6455;}
+  #accountName{font-size:13px; font-weight:700; color:var(--text-lo);}
   #signOutBtn, #statsBtn, #rulesBtn, #closeStatsBtn, #closeRulesBtn{
-    border:1.5px solid var(--glass-border); background:rgba(255,255,255,.4);
-    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
-    border-radius:14px; padding:7px 13px;
-    font-size:12px; font-weight:700; color:var(--ink); cursor:pointer;
-    transition:transform .15s, box-shadow .15s, background .15s;
-    box-shadow:0 3px 10px rgba(20,24,31,.08), inset 0 1px 0 rgba(255,255,255,.5);
+    border:1.5px solid var(--dglass-border); background:rgba(255,255,255,.05);
+    border-radius:999px; padding:7px 13px;
+    font-size:12px; font-weight:700; color:var(--text-hi); cursor:pointer;
+    transition:transform .15s, background .15s;
   }
-  #signOutBtn:hover, #closeStatsBtn:hover, #closeRulesBtn:hover{transform:translateY(-2px); background:rgba(255,255,255,.6); box-shadow:0 6px 16px rgba(20,24,31,.12), inset 0 1px 0 rgba(255,255,255,.6);}
-  #statsBtn, #rulesBtn{width:100%; margin-bottom:6px; font-weight:800; background:rgba(255,255,255,.5);}
-  #statsBtn:hover, #rulesBtn:hover{transform:translateY(-2px); box-shadow:0 6px 16px rgba(20,24,31,.14), inset 0 1px 0 rgba(255,255,255,.6);}
+  #signOutBtn:hover, #closeStatsBtn:hover, #closeRulesBtn:hover{background:rgba(255,255,255,.1); transform:translateY(-1px);}
+  #rulesBody{color:var(--text-lo);}
+  #rulesBody b{color:var(--text-hi);}
+  #statsBtn, #rulesBtn{width:100%; margin-bottom:6px; font-weight:800;}
+  #statsBtn:hover, #rulesBtn:hover{background:rgba(255,255,255,.1); transform:translateY(-1px);}
   #resetStatsBtn{
-    width:100%; margin-top:10px; border:1.5px solid rgba(224,51,43,.4); background:rgba(224,51,43,.08);
-    backdrop-filter:blur(12px); color:var(--tagger-dark);
-    border-radius:14px; padding:8px 11px; font-size:12px; font-weight:700; cursor:pointer;
-    transition:transform .15s, box-shadow .15s;
+    width:100%; margin-top:10px; border:1.5px solid rgba(224,51,43,.4); background:rgba(224,51,43,.1); color:#ff9d92;
+    border-radius:999px; padding:8px 11px; font-size:12px; font-weight:700; cursor:pointer;
+    transition:transform .15s, background .15s;
   }
-  #resetStatsBtn:hover{transform:translateY(-2px); background:rgba(224,51,43,.15); box-shadow:0 6px 16px rgba(224,51,43,.18);}
+  #resetStatsBtn:hover{background:rgba(224,51,43,.18); transform:translateY(-1px);}
   #closeStatsBtn, #closeRulesBtn{width:100%; margin-top:10px;}
   #statsModal, #rulesModal{
     position:fixed; inset:0; z-index:2500;
     display:flex; align-items:center; justify-content:center;
-    background:rgba(14,18,24,.8); padding:20px;
+    background:rgba(5,6,8,.85); padding:20px;
   }
   #setup .card, #statsModal .card, #rulesModal .card{
     width:100%; max-width:360px; max-height:85vh; overflow-y:auto; overflow-x:hidden;
-    background:var(--glass-bg);
-    backdrop-filter:blur(var(--glass-blur)) saturate(180%);
-    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(180%);
-    border:1px solid var(--glass-border);
-    border-radius:28px;
-    box-shadow:var(--glass-shadow), 0 30px 70px rgba(0,0,0,.45);
+    background:var(--dglass-bg);
+    backdrop-filter:blur(22px) saturate(140%);
+    -webkit-backdrop-filter:blur(22px) saturate(140%);
+    border:1px solid var(--dglass-border);
+    border-radius:24px;
+    box-shadow:0 24px 70px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06);
   }
-  #statsBody{font-size:14px; line-height:2; color:var(--ink); margin-top:14px;}
-  #statsBody b{color:var(--tagger); font-size:16px; font-weight:800;}
+  #statsBody{margin-top:14px;}
+  .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .stat-card{
+    background:rgba(255,255,255,.05); border:1px solid var(--dglass-border); border-radius:16px;
+    padding:14px 12px; text-align:center;
+  }
+  .stat-card .stat-icon{font-size:20px; margin-bottom:6px;}
+  .stat-card .stat-num{font-family:'Anton',sans-serif; font-size:26px; color:var(--text-hi); line-height:1;}
+  .stat-card .stat-label{font-size:11px; color:var(--text-lo); margin-top:4px; text-transform:uppercase; letter-spacing:.4px;}
 
   /* ---- Map + HUD ---- */
   #map{position:fixed; inset:0;}
@@ -162,10 +195,9 @@
     gap:10px; pointer-events:none;
   }
   .panel{
-    background:rgba(244,242,236,.62); backdrop-filter:blur(14px) saturate(160%); -webkit-backdrop-filter:blur(14px) saturate(160%);
-    border-radius:18px; padding:10px 14px;
-    border:1px solid rgba(255,255,255,.5);
-    box-shadow:0 6px 20px rgba(20,24,31,.14), inset 0 1px 0 rgba(255,255,255,.45); pointer-events:auto;
+    background:var(--paper); border-radius:14px; padding:10px 14px;
+    border:2px solid var(--ink);
+    box-shadow:0 3px 0 var(--ink); pointer-events:auto;
     font-size:12.5px; line-height:1.5;
   }
   #mePanel b{font-weight:800; font-size:15px;}
@@ -179,25 +211,24 @@
   #activePowerStatus{margin-top:4px; font-weight:700; color:var(--tagger-dark);}
   #nearestPower{margin-top:4px; color:#6b6455; font-size:11.5px;}
   .power-entry{
-    background:rgba(255,255,255,.4); backdrop-filter:blur(10px); border:1.5px solid var(--glass-border); border-radius:16px;
+    background:rgba(255,255,255,.05); border:1.5px solid var(--dglass-border); border-radius:14px;
     padding:10px 12px; margin:10px 0;
   }
-  .power-entry b{display:block; margin-bottom:3px; font-size:14px;}
-  .power-entry p{margin:0; font-size:12.5px; color:#6b6455;}
+  .power-entry b{display:block; margin-bottom:3px; font-size:14px; color:var(--text-hi);}
+  .power-entry p{margin:0; font-size:12.5px; color:var(--text-lo);}
   .powerup-popup .collect-btn{
-    margin-top:6px; padding:7px 14px; border:none; border-radius:14px;
-    background:linear-gradient(180deg, rgba(255,196,64,.95), rgba(242,169,0,.9));
+    margin-top:6px; padding:7px 14px; border:2px solid var(--ink); border-radius:10px;
+    background:var(--amber);
     color:var(--ink); font-weight:800; font-size:12px; cursor:pointer;
-    text-transform:uppercase; letter-spacing:.3px; box-shadow:0 4px 12px rgba(242,169,0,.4);
+    text-transform:uppercase; letter-spacing:.3px; box-shadow:0 3px 0 var(--ink);
   }
   #boundsStatus.in{color:#2e7d32;}
   #boundsStatus.out{color:var(--tagger-dark);}
   #globalCountdown{
     position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:1001;
-    background:rgba(20,24,31,.65); backdrop-filter:blur(14px) saturate(160%); -webkit-backdrop-filter:blur(14px) saturate(160%);
-    color:#fff; padding:7px 16px; border-radius:20px; border:1px solid rgba(255,255,255,.15);
+    background:var(--ink); color:#fff; padding:7px 16px; border-radius:20px; border:2px solid var(--amber);
     font-size:12.5px; font-weight:700; display:flex; align-items:center; gap:6px;
-    box-shadow:0 6px 20px rgba(0,0,0,.3); pointer-events:none;
+    box-shadow:0 4px 14px rgba(0,0,0,.3); pointer-events:none;
   }
   #globalCountdown .live-dot{
     width:7px; height:7px; border-radius:50%; background:var(--tagger); flex-shrink:0;
@@ -205,18 +236,18 @@
   }
   @keyframes live-blink{0%,100%{opacity:1;} 50%{opacity:.25;}}
   #endGameBtn{
-    margin-top:8px; width:100%; border:1px solid rgba(255,255,255,.4); background:rgba(255,255,255,.3);
-    backdrop-filter:blur(8px); color:#6b6455;
-    border-radius:12px; padding:6px 10px; font-size:11.5px; font-weight:700; cursor:pointer;
-    transition:transform .15s, box-shadow .15s, background .15s, color .15s, border-color .15s;
+    margin-top:8px; width:100%; border:2px solid var(--line); background:#fff; color:#6b6455;
+    border-radius:10px; padding:6px 10px; font-size:11.5px; font-weight:700; cursor:pointer;
+    transition:transform .1s, box-shadow .1s, background .15s, color .15s, border-color .15s;
+    box-shadow:0 2px 0 var(--line);
   }
-  #endGameBtn:hover{transform:translateY(-2px); background:rgba(224,51,43,.15); color:var(--tagger-dark); border-color:rgba(224,51,43,.4); box-shadow:0 6px 16px rgba(224,51,43,.18);}
+  #endGameBtn:hover{background:#fdeceb; color:var(--tagger-dark); border-color:var(--tagger);}
+  #endGameBtn:active{transform:translateY(2px); box-shadow:0 0 0 var(--line);}
 
   #legend{
     position:fixed; bottom:14px; left:12px; z-index:1000;
-    background:rgba(244,242,236,.62); backdrop-filter:blur(14px) saturate(160%); -webkit-backdrop-filter:blur(14px) saturate(160%);
-    border:1px solid rgba(255,255,255,.5); border-radius:16px; padding:8px 12px;
-    font-size:11.5px; box-shadow:0 6px 20px rgba(20,24,31,.14), inset 0 1px 0 rgba(255,255,255,.45);
+    background:var(--paper); border:2px solid var(--ink); border-radius:14px; padding:8px 12px;
+    font-size:11.5px; box-shadow:0 3px 0 var(--ink);
   }
   #legend div{display:flex; align-items:center; gap:6px; margin:3px 0;}
   .dot{width:10px; height:10px; border-radius:50%; display:inline-block; border:2px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.2);}
@@ -230,18 +261,10 @@
      killing transition alone still let buttons jump instantly to their
      enlarged state, which wasn't actually fixing anything. Resetting
      transform is what matters both visually and for performance, since
-     scale/translate on hover is what forces a repaint. Backdrop-filter blur
-     over the live panning map is the other real cost, so low power mode
-     drops it entirely on every map-overlay glass surface, falling back to a
-     plain near-opaque background instead. */
+     scale/translate on hover is what forces a repaint. */
   body.low-power *{ animation:none !important; transition:none !important; }
   body.low-power .me-marker-ring{ display:none !important; }
-  body.low-power .panel, body.low-power #legend, body.low-power #styleSwitch,
-  body.low-power #globalCountdown, body.low-power #recenterBtn, body.low-power #endGameBtn{
-    backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
-    background:rgba(244,242,236,.96) !important;
-  }
-  body.low-power #globalCountdown{ background:rgba(20,24,31,.94) !important; }
+  body.low-power .badge-icon{ animation:none !important; }
   body.low-power .role-btn:hover,
   body.low-power #startBtn:hover,
   body.low-power #googleSignInBtn:hover,
@@ -260,30 +283,27 @@
 
   #recenterBtn{
     position:fixed; bottom:64px; right:12px; z-index:1000;
-    width:38px; height:38px; border-radius:50%; border:1px solid rgba(255,255,255,.5);
-    background:rgba(244,242,236,.62); backdrop-filter:blur(14px) saturate(160%); -webkit-backdrop-filter:blur(14px) saturate(160%);
-    font-size:17px; cursor:pointer;
-    box-shadow:0 6px 18px rgba(20,24,31,.16), inset 0 1px 0 rgba(255,255,255,.5);
+    width:38px; height:38px; border-radius:50%; border:2px solid var(--ink);
+    background:var(--paper); font-size:17px; cursor:pointer;
+    box-shadow:0 3px 0 var(--ink);
     display:flex; align-items:center; justify-content:center;
-    transition:transform .15s;
+    transition:transform .1s;
   }
-  #recenterBtn:hover{transform:scale(1.08);}
-  #recenterBtn:active{transform:scale(0.95);}
+  #recenterBtn:active{transform:translateY(2px); box-shadow:0 1px 0 var(--ink);}
 
   #styleSwitch{
     position:fixed; bottom:14px; right:12px; z-index:1000;
-    display:flex; background:rgba(244,242,236,.62); backdrop-filter:blur(14px) saturate(160%); -webkit-backdrop-filter:blur(14px) saturate(160%);
-    border:1px solid rgba(255,255,255,.5); border-radius:16px; padding:4px;
-    box-shadow:0 6px 20px rgba(20,24,31,.14), inset 0 1px 0 rgba(255,255,255,.45); gap:3px;
+    display:flex; background:var(--paper); border:2px solid var(--ink); border-radius:14px; padding:4px;
+    box-shadow:0 3px 0 var(--ink); gap:3px;
   }
   .style-btn{
-    border:none; background:transparent; padding:6px 11px; border-radius:12px;
+    border:none; background:transparent; padding:6px 11px; border-radius:9px;
     font-size:11.5px; font-weight:700; color:#5a5448; cursor:pointer;
-    transition:transform .15s, background .15s, color .15s;
+    transition:background .15s, color .15s;
   }
-  .style-btn:hover{background:rgba(255,255,255,.5); color:var(--ink);}
-  .style-btn.active{background:rgba(20,24,31,.85); color:#fff;}
-  .style-btn.active:hover{background:rgba(20,24,31,.85);}
+  .style-btn:hover{background:var(--line); color:var(--ink);}
+  .style-btn.active{background:var(--ink); color:#fff;}
+  .style-btn.active:hover{background:var(--ink);}
 
   .leaflet-popup-content{font-size:12.5px; margin:8px 10px;}
   .leaflet-popup-content b{font-size:13px;}
@@ -357,9 +377,18 @@
 <body>
 
 <div id="setup">
+  <div class="ember" style="left:12%; width:3px; height:3px; animation-duration:6s; animation-delay:0s;"></div>
+  <div class="ember" style="left:22%; width:2px; height:2px; animation-duration:8s; animation-delay:1.5s;"></div>
+  <div class="ember" style="left:38%; width:3px; height:3px; animation-duration:7s; animation-delay:3s;"></div>
+  <div class="ember" style="left:58%; width:2px; height:2px; animation-duration:9s; animation-delay:.5s;"></div>
+  <div class="ember" style="left:72%; width:3px; height:3px; animation-duration:6.5s; animation-delay:2.5s;"></div>
+  <div class="ember" style="left:85%; width:2px; height:2px; animation-duration:8.5s; animation-delay:4s;"></div>
+  <div class="ember" style="left:6%; width:2px; height:2px; animation-duration:7.5s; animation-delay:5s;"></div>
+  <div class="ember" style="left:95%; width:3px; height:3px; animation-duration:9.5s; animation-delay:1s;"></div>
   <div class="card">
     <div class="hazard-stripe"></div>
     <div class="card-body">
+    <div class="badge-icon">🎯</div>
     <h1 class="display">City <span>Tag</span></h1>
     <p class="sub">Melbourne CBD</p>
 
@@ -405,7 +434,7 @@
     <div class="hazard-stripe"></div>
     <div class="card-body">
     <h1>My <span>Stats</span></h1>
-    <div id="statsBody" class="sub" style="text-transform:none; font-weight:400; letter-spacing:0;">Loading…</div>
+    <div id="statsBody">Loading…</div>
     <button id="resetStatsBtn" type="button">Reset my stats</button>
     <button id="closeStatsBtn" type="button">Close</button>
     </div>
@@ -427,7 +456,7 @@
         <b>🧨 Sabotage</b>
         <p>Drops a temporary red zone somewhere random on the map, visible to everyone. Anyone inside it gets the same warning as stepping outside the main boundary.</p>
       </div>
-      <p class="sub" style="text-transform:none; font-weight:500; opacity:.65; margin-top:14px;">More powers are on the way — this list will grow.</p>
+      <p style="text-transform:none; font-weight:500; opacity:.65; margin-top:14px; color:var(--text-lo);">More powers are on the way — this list will grow.</p>
     </div>
     <button id="closeRulesBtn" type="button">Close</button>
     </div>
@@ -738,16 +767,17 @@ document.getElementById('resetStatsBtn').addEventListener('click', async () => {
 async function showStats(){
   const body = document.getElementById('statsBody');
   document.getElementById('statsModal').style.display = 'flex';
-  body.textContent = 'Loading…';
+  body.innerHTML = '<p style="color:var(--text-lo); text-align:center;">Loading…</p>';
   try{
     const snap = await db.ref('users/' + myId + '/stats').once('value');
     const s = snap.val() || {};
-    body.innerHTML =
-      'Games played: <b>' + (s.gamesPlayed || 0) + '</b><br>' +
-      'Tags made (as tagger): <b>' + (s.tagsMade || 0) + '</b><br>' +
-      'Times tagged (as runner): <b>' + (s.timesTagged || 0) + '</b>';
+    body.innerHTML = '<div class="stat-grid">'
+      + '<div class="stat-card"><div class="stat-icon">🎮</div><div class="stat-num">' + (s.gamesPlayed || 0) + '</div><div class="stat-label">Games Played</div></div>'
+      + '<div class="stat-card"><div class="stat-icon">🎯</div><div class="stat-num">' + (s.tagsMade || 0) + '</div><div class="stat-label">Tags Made</div></div>'
+      + '<div class="stat-card"><div class="stat-icon">😵</div><div class="stat-num">' + (s.timesTagged || 0) + '</div><div class="stat-label">Times Tagged</div></div>'
+      + '</div>';
   }catch(e){
-    body.textContent = 'Could not load stats.';
+    body.innerHTML = '<p style="color:var(--text-lo); text-align:center;">Could not load stats.</p>';
   }
 }
 
