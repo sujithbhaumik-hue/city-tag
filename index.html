@@ -31,6 +31,11 @@
     --amber:#f2a900;
     --unknown:#6b6f76;
     --line:#dcd7cb;
+    --glass-bg:rgba(255,255,255,.5);
+    --glass-bg-strong:rgba(255,255,255,.68);
+    --glass-border:rgba(255,255,255,.55);
+    --glass-shadow:0 8px 32px rgba(20,24,31,.16), inset 0 1px 0 rgba(255,255,255,.55);
+    --glass-blur:22px;
   }
   *{box-sizing:border-box;}
   html,body{height:100%;margin:0;}
@@ -47,93 +52,105 @@
     letter-spacing:.5px;
   }
   .hazard-stripe{
-    height:8px;
-    background:repeating-linear-gradient(45deg, var(--amber) 0 10px, var(--ink) 10px 20px);
+    height:4px; margin-bottom:2px;
+    background:linear-gradient(90deg, transparent, var(--amber) 30%, var(--tagger) 70%, transparent);
+    opacity:.75;
   }
 
   /* ---- Setup screen ---- */
   #setup{
     position:fixed; inset:0; z-index:2000;
     display:flex; align-items:center; justify-content:center;
-    background:linear-gradient(160deg,#0e1218,#1c2530);
+    background:
+      radial-gradient(circle at 25% 15%, rgba(224,51,43,.25), transparent 45%),
+      radial-gradient(circle at 80% 85%, rgba(34,119,196,.22), transparent 50%),
+      linear-gradient(160deg,#0b0e14,#1b2432);
     padding:20px;
   }
-  #setup .card{
-    width:100%; max-width:360px;
-    background:var(--paper);
-    border-radius:14px;
-    overflow:hidden;
-    box-shadow:0 30px 70px rgba(0,0,0,.5);
-  }
   #setup .card-body{padding:24px 26px 24px;}
-  #setup h1, #statsModal h1{
+  #setup h1, #statsModal h1, #rulesModal h1{
     font-size:38px; line-height:.95; margin:14px 0 2px;
   }
-  #setup h1 span, #statsModal h1 span{color:var(--tagger); -webkit-text-stroke:0; }
+  #setup h1 span, #statsModal h1 span, #rulesModal h1 span{color:var(--tagger); -webkit-text-stroke:0; }
   #setup h1 .outline{color:var(--paper); -webkit-text-stroke:2px var(--ink); text-shadow:none;}
-  #setup p.sub{margin:0 0 18px; font-size:13px; font-weight:700; letter-spacing:.5px; color:#8a8272; text-transform:uppercase;}
-  label{display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#8a8272; margin:16px 0 6px;}
+  #setup p.sub{margin:0 0 18px; font-size:13px; font-weight:700; letter-spacing:.5px; color:#5a5448; text-transform:uppercase;}
+  label{display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#5a5448; margin:16px 0 6px;}
   input[type=text]{
-    width:100%; padding:11px 12px; border-radius:8px; border:2px solid var(--line);
-    font-size:15px; background:#fff; color:var(--ink);
+    width:100%; padding:11px 12px; border-radius:14px; border:1.5px solid var(--glass-border);
+    font-size:15px; background:rgba(255,255,255,.55); backdrop-filter:blur(8px); color:var(--ink);
   }
-  input[type=text]:focus{outline:none; border-color:var(--amber);}
+  input[type=text]:focus{outline:none; border-color:var(--amber); background:rgba(255,255,255,.75);}
   .role-toggle{display:flex; gap:10px; margin-top:8px;}
   .role-btn{
-    flex:1; padding:16px 8px; border-radius:12px; border:3px solid var(--ink);
-    background:#fff; cursor:pointer; font-weight:700; font-size:13px;
+    flex:1; padding:16px 8px; border-radius:20px; border:1.5px solid var(--glass-border);
+    background:rgba(255,255,255,.4); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    cursor:pointer; font-weight:700; font-size:13px;
     display:flex; flex-direction:column; align-items:center; gap:6px;
-    transition:transform .15s, box-shadow .15s;
-    box-shadow:3px 3px 0 var(--ink);
+    transition:transform .15s, box-shadow .15s, background .15s;
+    box-shadow:0 4px 14px rgba(20,24,31,.1), inset 0 1px 0 rgba(255,255,255,.5);
   }
   .role-btn .role-icon{font-size:26px; line-height:1;}
-  .role-btn small{font-weight:600; font-size:11px; color:#8a8272;}
-  .role-btn:hover{transform:translateY(-3px) scale(1.03); box-shadow:5px 6px 0 var(--ink);}
-  .role-btn:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink);}
-  .role-btn.active[data-role="tagger"]{border-color:var(--tagger); background:#fdeceb; color:var(--tagger-dark); box-shadow:3px 3px 0 var(--tagger);}
-  .role-btn.active[data-role="runner"]{border-color:var(--runner); background:#eaf3fb; color:var(--runner-dark); box-shadow:3px 3px 0 var(--runner);}
-  .role-btn.active[data-role="tagger"]:hover{box-shadow:5px 6px 0 var(--tagger);}
-  .role-btn.active[data-role="runner"]:hover{box-shadow:5px 6px 0 var(--runner);}
+  .role-btn small{font-weight:600; font-size:11px; color:#5a5448;}
+  .role-btn:hover{transform:translateY(-3px); box-shadow:0 8px 22px rgba(20,24,31,.16), inset 0 1px 0 rgba(255,255,255,.6);}
+  .role-btn:active{transform:translateY(0); box-shadow:0 2px 8px rgba(20,24,31,.12), inset 0 1px 0 rgba(255,255,255,.4);}
+  .role-btn.active[data-role="tagger"]{border-color:rgba(224,51,43,.55); background:rgba(224,51,43,.16); color:var(--tagger-dark);}
+  .role-btn.active[data-role="runner"]{border-color:rgba(34,119,196,.55); background:rgba(34,119,196,.16); color:var(--runner-dark);}
   #startBtn{
-    width:100%; margin-top:22px; padding:15px; border:3px solid var(--ink); border-radius:11px;
-    background:var(--amber); color:var(--ink); font-weight:800; font-size:17px; letter-spacing:.3px;
-    cursor:pointer; box-shadow:4px 4px 0 var(--ink); transition:transform .15s, box-shadow .15s;
+    width:100%; margin-top:22px; padding:15px; border:1.5px solid rgba(242,169,0,.6); border-radius:20px;
+    background:linear-gradient(180deg, rgba(255,196,64,.85), rgba(242,169,0,.75));
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    color:var(--ink); font-weight:800; font-size:17px; letter-spacing:.3px;
+    cursor:pointer; box-shadow:0 6px 20px rgba(242,169,0,.35), inset 0 1px 0 rgba(255,255,255,.6);
+    transition:transform .15s, box-shadow .15s;
   }
-  #startBtn:hover{transform:translateY(-3px) scale(1.02); box-shadow:6px 7px 0 var(--ink);}
-  #startBtn:active{transform:translate(3px,3px); box-shadow:1px 1px 0 var(--ink);}
+  #startBtn:hover{transform:translateY(-3px); box-shadow:0 10px 26px rgba(242,169,0,.4), inset 0 1px 0 rgba(255,255,255,.7);}
+  #startBtn:active{transform:translateY(0); box-shadow:0 3px 10px rgba(242,169,0,.3), inset 0 1px 0 rgba(255,255,255,.5);}
   #startBtn:disabled{opacity:.4; cursor:not-allowed;}
   #setupError{color:var(--tagger-dark); font-size:12.5px; margin-top:10px; min-height:14px; font-weight:700;}
 
   #googleSignInBtn{
-    width:100%; padding:13px; border:2px solid var(--ink); border-radius:9px;
-    background:#fff; color:var(--ink); font-weight:700; font-size:14px; cursor:pointer;
-    transition:transform .15s, box-shadow .15s; box-shadow:2px 2px 0 var(--ink);
+    width:100%; padding:13px; border:1.5px solid var(--glass-border); border-radius:16px;
+    background:rgba(255,255,255,.5); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    color:var(--ink); font-weight:700; font-size:14px; cursor:pointer;
+    transition:transform .15s, box-shadow .15s; box-shadow:0 4px 14px rgba(20,24,31,.1), inset 0 1px 0 rgba(255,255,255,.5);
   }
-  #googleSignInBtn:hover{transform:translateY(-2px) scale(1.02); box-shadow:4px 5px 0 var(--ink);}
-  #googleSignInBtn:active{transform:translate(1px,1px); box-shadow:0 0 0 var(--ink);}
+  #googleSignInBtn:hover{transform:translateY(-2px); box-shadow:0 8px 20px rgba(20,24,31,.15), inset 0 1px 0 rgba(255,255,255,.6);}
+  #googleSignInBtn:active{transform:translateY(0);}
   #accountRow{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
   #accountName{font-size:13px; font-weight:700; color:#6b6455;}
   #signOutBtn, #statsBtn, #rulesBtn, #closeStatsBtn, #closeRulesBtn{
-    border:1.5px solid var(--line); background:#fff; border-radius:7px; padding:6px 11px;
+    border:1.5px solid var(--glass-border); background:rgba(255,255,255,.4);
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    border-radius:14px; padding:7px 13px;
     font-size:12px; font-weight:700; color:var(--ink); cursor:pointer;
     transition:transform .15s, box-shadow .15s, background .15s;
+    box-shadow:0 3px 10px rgba(20,24,31,.08), inset 0 1px 0 rgba(255,255,255,.5);
   }
-  #signOutBtn:hover, #closeStatsBtn:hover, #closeRulesBtn:hover{transform:translateY(-2px) scale(1.03); background:var(--paper); box-shadow:2px 3px 0 var(--line);}
-  #statsBtn, #rulesBtn{width:100%; margin-bottom:6px; border:2px solid var(--ink); font-weight:800; box-shadow:2px 2px 0 var(--ink);}
-  #statsBtn:hover, #rulesBtn:hover{transform:translateY(-2px) scale(1.02); box-shadow:4px 5px 0 var(--ink);}
+  #signOutBtn:hover, #closeStatsBtn:hover, #closeRulesBtn:hover{transform:translateY(-2px); background:rgba(255,255,255,.6); box-shadow:0 6px 16px rgba(20,24,31,.12), inset 0 1px 0 rgba(255,255,255,.6);}
+  #statsBtn, #rulesBtn{width:100%; margin-bottom:6px; font-weight:800; background:rgba(255,255,255,.5);}
+  #statsBtn:hover, #rulesBtn:hover{transform:translateY(-2px); box-shadow:0 6px 16px rgba(20,24,31,.14), inset 0 1px 0 rgba(255,255,255,.6);}
   #resetStatsBtn{
-    width:100%; margin-top:10px; border:1.5px solid var(--tagger); background:#fff; color:var(--tagger-dark);
-    border-radius:7px; padding:8px 11px; font-size:12px; font-weight:700; cursor:pointer;
+    width:100%; margin-top:10px; border:1.5px solid rgba(224,51,43,.4); background:rgba(224,51,43,.08);
+    backdrop-filter:blur(12px); color:var(--tagger-dark);
+    border-radius:14px; padding:8px 11px; font-size:12px; font-weight:700; cursor:pointer;
     transition:transform .15s, box-shadow .15s;
   }
-  #resetStatsBtn:hover{transform:translateY(-2px) scale(1.02); background:#fdeceb; box-shadow:2px 3px 0 var(--tagger);}
+  #resetStatsBtn:hover{transform:translateY(-2px); background:rgba(224,51,43,.15); box-shadow:0 6px 16px rgba(224,51,43,.18);}
   #closeStatsBtn, #closeRulesBtn{width:100%; margin-top:10px;}
   #statsModal, #rulesModal{
     position:fixed; inset:0; z-index:2500;
     display:flex; align-items:center; justify-content:center;
     background:rgba(14,18,24,.8); padding:20px;
   }
-  #rulesModal .card{ max-width:380px; max-height:85vh; overflow-y:auto; }
+  #setup .card, #statsModal .card, #rulesModal .card{
+    width:100%; max-width:360px; max-height:85vh; overflow-y:auto; overflow-x:hidden;
+    background:var(--glass-bg);
+    backdrop-filter:blur(var(--glass-blur)) saturate(180%);
+    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(180%);
+    border:1px solid var(--glass-border);
+    border-radius:28px;
+    box-shadow:var(--glass-shadow), 0 30px 70px rgba(0,0,0,.45);
+  }
   #statsBody{font-size:14px; line-height:2; color:var(--ink); margin-top:14px;}
   #statsBody b{color:var(--tagger); font-size:16px; font-weight:800;}
 
@@ -455,32 +472,132 @@ const db = firebase.database();
 const auth = firebase.auth();
 const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-/* ---------- Boundary: traced from the user's supplied map, expanded to fully
-   enclose the train lines below (Richmond, Arden, Parkville were previously
-   just outside — see chat) ---------- */
-/* NOTE: this is eyeballed/computed, not survey-accurate. For a precise boundary,
-   trace it at https://geojson.io over satellite imagery and swap these coordinates. */
+/* ---------- Boundary: a 2.7km-radius circle (approximated as a 120-point
+   polygon so all the existing point-in-polygon logic works unchanged),
+   centered so all 13 named stations fall comfortably inside. ---------- */
 const BOUNDARY = [
-  [-37.8073, 144.9399],
-  [-37.80629, 144.94042],
-  [-37.7986926, 144.9401755],
-  [-37.7986926, 144.964949],
-  [-37.8017, 144.9675],
-  [-37.8037, 144.9751],
-  [-37.8077, 144.9965],
-  [-37.8193, 144.9965],
-  [-37.82405, 144.98918],
-  [-37.8245, 144.9889],
-  [-37.8277, 144.9924],
-  [-37.8325, 144.9875],
-  [-37.8365, 144.9765],
-  [-37.8369, 144.9613],
-  [-37.8357, 144.9475],
-  [-37.8253, 144.9475],
-  [-37.8197, 144.9378],
-  [-37.8125, 144.9365],
+  [-37.78945, 144.9638],
+  [-37.78948, 144.96541],
+  [-37.78958, 144.96701],
+  [-37.78975, 144.96861],
+  [-37.78998, 144.97019],
+  [-37.79028, 144.97175],
+  [-37.79064, 144.97329],
+  [-37.79106, 144.97481],
+  [-37.79155, 144.97629],
+  [-37.79209, 144.97774],
+  [-37.7927, 144.97915],
+  [-37.79336, 144.98053],
+  [-37.79408, 144.98185],
+  [-37.79485, 144.98312],
+  [-37.79568, 144.98435],
+  [-37.79655, 144.98551],
+  [-37.79747, 144.98662],
+  [-37.79844, 144.98766],
+  [-37.79945, 144.98864],
+  [-37.80049, 144.98955],
+  [-37.80158, 144.99039],
+  [-37.80269, 144.99116],
+  [-37.80384, 144.99185],
+  [-37.80501, 144.99247],
+  [-37.80621, 144.993],
+  [-37.80743, 144.99346],
+  [-37.80866, 144.99383],
+  [-37.80991, 144.99413],
+  [-37.81117, 144.99434],
+  [-37.81243, 144.99446],
+  [-37.8137, 144.99451],
+  [-37.81497, 144.99446],
+  [-37.81624, 144.99434],
+  [-37.8175, 144.99413],
+  [-37.81875, 144.99383],
+  [-37.81998, 144.99346],
+  [-37.8212, 144.993],
+  [-37.8224, 144.99247],
+  [-37.82357, 144.99185],
+  [-37.82471, 144.99116],
+  [-37.82583, 144.99039],
+  [-37.82691, 144.98955],
+  [-37.82796, 144.98864],
+  [-37.82897, 144.98766],
+  [-37.82993, 144.98662],
+  [-37.83085, 144.98551],
+  [-37.83173, 144.98435],
+  [-37.83255, 144.98312],
+  [-37.83333, 144.98185],
+  [-37.83404, 144.98053],
+  [-37.83471, 144.97915],
+  [-37.83531, 144.97774],
+  [-37.83586, 144.97629],
+  [-37.83635, 144.97481],
+  [-37.83677, 144.97329],
+  [-37.83713, 144.97175],
+  [-37.83743, 144.97019],
+  [-37.83766, 144.96861],
+  [-37.83782, 144.96701],
+  [-37.83792, 144.96541],
+  [-37.83796, 144.9638],
+  [-37.83792, 144.9622],
+  [-37.83782, 144.96059],
+  [-37.83766, 144.959],
+  [-37.83743, 144.95742],
+  [-37.83713, 144.95586],
+  [-37.83677, 144.95432],
+  [-37.83635, 144.9528],
+  [-37.83586, 144.95132],
+  [-37.83531, 144.94987],
+  [-37.83471, 144.94845],
+  [-37.83404, 144.94708],
+  [-37.83333, 144.94576],
+  [-37.83255, 144.94448],
+  [-37.83173, 144.94326],
+  [-37.83085, 144.94209],
+  [-37.82993, 144.94099],
+  [-37.82897, 144.93994],
+  [-37.82796, 144.93897],
+  [-37.82691, 144.93806],
+  [-37.82583, 144.93722],
+  [-37.82471, 144.93645],
+  [-37.82357, 144.93576],
+  [-37.8224, 144.93514],
+  [-37.8212, 144.93461],
+  [-37.81998, 144.93415],
+  [-37.81875, 144.93377],
+  [-37.8175, 144.93348],
+  [-37.81624, 144.93327],
+  [-37.81497, 144.93314],
+  [-37.8137, 144.9331],
+  [-37.81243, 144.93314],
+  [-37.81117, 144.93327],
+  [-37.80991, 144.93348],
+  [-37.80866, 144.93377],
+  [-37.80743, 144.93415],
+  [-37.80621, 144.93461],
+  [-37.80501, 144.93514],
+  [-37.80384, 144.93576],
+  [-37.80269, 144.93645],
+  [-37.80158, 144.93722],
+  [-37.80049, 144.93806],
+  [-37.79945, 144.93897],
+  [-37.79844, 144.93994],
+  [-37.79747, 144.94099],
+  [-37.79655, 144.94209],
+  [-37.79568, 144.94326],
+  [-37.79485, 144.94448],
+  [-37.79408, 144.94576],
+  [-37.79336, 144.94708],
+  [-37.7927, 144.94845],
+  [-37.79209, 144.94987],
+  [-37.79155, 144.95132],
+  [-37.79106, 144.9528],
+  [-37.79064, 144.95432],
+  [-37.79028, 144.95586],
+  [-37.78998, 144.95742],
+  [-37.78975, 144.959],
+  [-37.78958, 144.96059],
+  [-37.78948, 144.9622],
 ];
-const CENTER = [-37.8180, 144.9650];
+const CENTER = [-37.8137, 144.9638];
 
 /* ---------- Train lines (real station coordinates sourced from Wikipedia/PTV records) ---------- */
 const STATIONS = {
