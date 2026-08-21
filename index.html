@@ -81,18 +81,6 @@
     100%{transform:translateY(-380px); opacity:0;}
   }
   body.low-power .ember{ display:none !important; }
-  .badge-icon{
-    width:64px; height:64px; margin:0 auto 4px; border-radius:50%;
-    background:radial-gradient(circle at 35% 30%, #2a1416, var(--ink) 70%);
-    border:3px solid var(--tagger);
-    box-shadow:0 0 0 4px rgba(20,24,31,.9), 0 0 22px rgba(224,51,43,.6);
-    display:flex; align-items:center; justify-content:center; font-size:28px;
-    animation:badge-glow 2.6s ease-in-out infinite;
-  }
-  @keyframes badge-glow{
-    0%,100%{box-shadow:0 0 0 4px rgba(20,24,31,.9), 0 0 18px rgba(224,51,43,.5);}
-    50%{box-shadow:0 0 0 4px rgba(20,24,31,.9), 0 0 32px rgba(224,51,43,.85);}
-  }
   #setup .card-body{padding:24px 26px 24px;}
   #setup h1, #statsModal h1, #rulesModal h1{
     font-size:38px; line-height:.95; margin:14px 0 2px; color:var(--text-hi);
@@ -195,10 +183,11 @@
     gap:10px; pointer-events:none;
   }
   .panel{
-    background:var(--paper); border-radius:14px; padding:10px 14px;
-    border:2px solid var(--ink);
-    box-shadow:0 3px 0 var(--ink); pointer-events:auto;
-    font-size:12.5px; line-height:1.5;
+    background:var(--dglass-bg-strong); backdrop-filter:blur(16px) saturate(140%); -webkit-backdrop-filter:blur(16px) saturate(140%);
+    border-radius:16px; padding:10px 14px;
+    border:1px solid var(--dglass-border);
+    box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06); pointer-events:auto;
+    font-size:12.5px; line-height:1.5; color:var(--text-hi);
   }
   #mePanel b{font-weight:800; font-size:15px;}
   .pill{
@@ -207,9 +196,9 @@
   }
   .pill.tagger{background:var(--tagger); color:#fff;}
   .pill.runner{background:var(--runner); color:#fff;}
-  #boundsStatus{font-weight:700; margin-top:4px;}
-  #activePowerStatus{margin-top:4px; font-weight:700; color:var(--tagger-dark);}
-  #nearestPower{margin-top:4px; color:#6b6455; font-size:11.5px;}
+  #boundsStatus{font-weight:700; margin-top:4px; color:var(--text-hi);}
+  #activePowerStatus{margin-top:4px; font-weight:700; color:#ff9d92;}
+  #nearestPower{margin-top:4px; color:var(--text-lo); font-size:11.5px;}
   .power-entry{
     background:rgba(255,255,255,.05); border:1.5px solid var(--dglass-border); border-radius:14px;
     padding:10px 12px; margin:10px 0;
@@ -222,13 +211,14 @@
     color:var(--ink); font-weight:800; font-size:12px; cursor:pointer;
     text-transform:uppercase; letter-spacing:.3px; box-shadow:0 3px 0 var(--ink);
   }
-  #boundsStatus.in{color:#2e7d32;}
-  #boundsStatus.out{color:var(--tagger-dark);}
+  #boundsStatus.in{color:#5fd97a;}
+  #boundsStatus.out{color:#ff9d92;}
   #globalCountdown{
     position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:1001;
-    background:var(--ink); color:#fff; padding:7px 16px; border-radius:20px; border:2px solid var(--amber);
+    background:var(--dglass-bg-strong); backdrop-filter:blur(16px) saturate(140%); -webkit-backdrop-filter:blur(16px) saturate(140%);
+    color:var(--text-hi); padding:7px 16px; border-radius:20px; border:1px solid rgba(242,169,0,.4);
     font-size:12.5px; font-weight:700; display:flex; align-items:center; gap:6px;
-    box-shadow:0 4px 14px rgba(0,0,0,.3); pointer-events:none;
+    box-shadow:0 8px 24px rgba(0,0,0,.4); pointer-events:none;
   }
   #globalCountdown .live-dot{
     width:7px; height:7px; border-radius:50%; background:var(--tagger); flex-shrink:0;
@@ -236,21 +226,22 @@
   }
   @keyframes live-blink{0%,100%{opacity:1;} 50%{opacity:.25;}}
   #endGameBtn{
-    margin-top:8px; width:100%; border:2px solid var(--line); background:#fff; color:#6b6455;
-    border-radius:10px; padding:6px 10px; font-size:11.5px; font-weight:700; cursor:pointer;
-    transition:transform .1s, box-shadow .1s, background .15s, color .15s, border-color .15s;
-    box-shadow:0 2px 0 var(--line);
+    margin-top:8px; width:100%; border:1px solid var(--dglass-border); background:rgba(255,255,255,.05); color:var(--text-lo);
+    border-radius:999px; padding:6px 10px; font-size:11.5px; font-weight:700; cursor:pointer;
+    transition:transform .15s, background .15s, color .15s, border-color .15s;
   }
-  #endGameBtn:hover{background:#fdeceb; color:var(--tagger-dark); border-color:var(--tagger);}
-  #endGameBtn:active{transform:translateY(2px); box-shadow:0 0 0 var(--line);}
+  #endGameBtn:hover{background:rgba(224,51,43,.15); color:#ff9d92; border-color:rgba(224,51,43,.4);}
+  #endGameBtn:active{transform:translateY(1px);}
 
   #legend{
     position:fixed; bottom:14px; left:12px; z-index:1000;
-    background:var(--paper); border:2px solid var(--ink); border-radius:14px; padding:8px 12px;
-    font-size:11.5px; box-shadow:0 3px 0 var(--ink);
+    background:var(--dglass-bg-strong); backdrop-filter:blur(16px) saturate(140%); -webkit-backdrop-filter:blur(16px) saturate(140%);
+    border:1px solid var(--dglass-border); border-radius:16px; padding:8px 12px;
+    font-size:11.5px; color:var(--text-hi);
+    box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
   }
   #legend div{display:flex; align-items:center; gap:6px; margin:3px 0;}
-  .dot{width:10px; height:10px; border-radius:50%; display:inline-block; border:2px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.2);}
+  .dot{width:10px; height:10px; border-radius:50%; display:inline-block; border:2px solid rgba(255,255,255,.25); box-shadow:0 0 0 1px rgba(0,0,0,.3);}
   .dot.me{background:var(--amber);}
   .dot.tagger{background:var(--tagger);}
   .dot.runner{background:var(--runner);}
@@ -261,10 +252,16 @@
      killing transition alone still let buttons jump instantly to their
      enlarged state, which wasn't actually fixing anything. Resetting
      transform is what matters both visually and for performance, since
-     scale/translate on hover is what forces a repaint. */
+     scale/translate on hover is what forces a repaint. Backdrop-filter over
+     the live panning map is the other real cost, so low power mode drops it
+     entirely on every HUD surface, falling back to a solid dark panel. */
   body.low-power *{ animation:none !important; transition:none !important; }
   body.low-power .me-marker-ring{ display:none !important; }
-  body.low-power .badge-icon{ animation:none !important; }
+  body.low-power .panel, body.low-power #legend, body.low-power #styleSwitch,
+  body.low-power #globalCountdown, body.low-power #recenterBtn{
+    backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+    background:rgba(20,18,19,.96) !important;
+  }
   body.low-power .role-btn:hover,
   body.low-power #startBtn:hover,
   body.low-power #googleSignInBtn:hover,
@@ -283,27 +280,29 @@
 
   #recenterBtn{
     position:fixed; bottom:64px; right:12px; z-index:1000;
-    width:38px; height:38px; border-radius:50%; border:2px solid var(--ink);
-    background:var(--paper); font-size:17px; cursor:pointer;
-    box-shadow:0 3px 0 var(--ink);
+    width:38px; height:38px; border-radius:50%; border:1px solid var(--dglass-border);
+    background:var(--dglass-bg-strong); backdrop-filter:blur(16px) saturate(140%); -webkit-backdrop-filter:blur(16px) saturate(140%);
+    font-size:17px; cursor:pointer;
+    box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
     display:flex; align-items:center; justify-content:center;
-    transition:transform .1s;
+    transition:transform .15s;
   }
-  #recenterBtn:active{transform:translateY(2px); box-shadow:0 1px 0 var(--ink);}
+  #recenterBtn:active{transform:scale(0.92);}
 
   #styleSwitch{
     position:fixed; bottom:14px; right:12px; z-index:1000;
-    display:flex; background:var(--paper); border:2px solid var(--ink); border-radius:14px; padding:4px;
-    box-shadow:0 3px 0 var(--ink); gap:3px;
+    display:flex; background:var(--dglass-bg-strong); backdrop-filter:blur(16px) saturate(140%); -webkit-backdrop-filter:blur(16px) saturate(140%);
+    border:1px solid var(--dglass-border); border-radius:16px; padding:4px;
+    box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06); gap:3px;
   }
   .style-btn{
-    border:none; background:transparent; padding:6px 11px; border-radius:9px;
-    font-size:11.5px; font-weight:700; color:#5a5448; cursor:pointer;
+    border:none; background:transparent; padding:6px 11px; border-radius:12px;
+    font-size:11.5px; font-weight:700; color:var(--text-lo); cursor:pointer;
     transition:background .15s, color .15s;
   }
-  .style-btn:hover{background:var(--line); color:var(--ink);}
-  .style-btn.active{background:var(--ink); color:#fff;}
-  .style-btn.active:hover{background:var(--ink);}
+  .style-btn:hover{background:rgba(255,255,255,.1); color:var(--text-hi);}
+  .style-btn.active{background:var(--tagger); color:#fff;}
+  .style-btn.active:hover{background:var(--tagger);}
 
   .leaflet-popup-content{font-size:12.5px; margin:8px 10px;}
   .leaflet-popup-content b{font-size:13px;}
@@ -388,7 +387,6 @@
   <div class="card">
     <div class="hazard-stripe"></div>
     <div class="card-body">
-    <div class="badge-icon">🎯</div>
     <h1 class="display">City <span>Tag</span></h1>
     <p class="sub">Melbourne CBD</p>
 
@@ -955,7 +953,12 @@ function initMap(){
   // near the edge triggered a full elastic bounce-back recalculation on every
   // pointer-move, which is genuinely expensive on mobile. Not worth it for a
   // "don't scroll to Perth" guard, so it's gone.
-  map = L.map('map', { zoomControl: true }).setView(CENTER, 15);
+  // zoomControl disabled: Leaflet's default +/- control renders at top-left,
+  // which sits directly under our HUD panel — that mystery "black box" people
+  // saw peeking out was literally this control, and clicking the sliver that
+  // showed was clicking its hidden zoom button. Not needed anyway on mobile,
+  // where pinch-to-zoom already works.
+  map = L.map('map', { zoomControl: false }).setView(CENTER, 15);
   map.setMinZoom(12);
   setMapStyle('clean'); // closest free look to Apple Maps' light style
 
