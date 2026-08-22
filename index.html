@@ -61,15 +61,34 @@
     position:fixed; inset:0; z-index:2000;
     display:flex; align-items:center; justify-content:center;
     background:
-      radial-gradient(ellipse at 50% 105%, rgba(224,51,43,.45), transparent 55%),
-      radial-gradient(circle at 15% 25%, rgba(242,169,0,.06), transparent 30%),
-      repeating-linear-gradient(60deg, rgba(255,255,255,.03) 0 1.5px, transparent 1.5px 30px),
-      repeating-linear-gradient(-60deg, rgba(255,255,255,.03) 0 1.5px, transparent 1.5px 30px),
-      linear-gradient(165deg, #08090c, #0f1114 55%, #121012);
-    padding:20px; position:fixed; overflow:hidden;
+      linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 25%, transparent 50%),
+      url("https://media.db.com/images/public/6a87d45cdbecdef15bc89486/e32081cc2_generated_image.png") center / 50% repeat,
+      #0A0A0A;
+    background-blend-mode: normal, screen, normal;
+    padding:20px; overflow:hidden;
   }
+  #setup::before{
+    content:'';
+    position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:rgba(0,0,0,.45);
+  }
+  #setup::after{
+    content:'';
+    position:absolute; inset:-5%; z-index:1; pointer-events:none;
+    background:
+      radial-gradient(ellipse 100% 65% at 50% 100%, rgba(255,60,0,.45), rgba(180,10,0,.2) 45%, transparent 75%),
+      linear-gradient(180deg, transparent 20%, rgba(60,0,0,.45) 50%, rgba(120,10,0,.85) 100%);
+    animation:flame-dance 5s ease-in-out infinite;
+  }
+  @keyframes flame-dance{
+    0%,100%{opacity:.85; transform:translateX(-1%) scaleY(1);}
+    25%{opacity:1; transform:translateX(1.5%) scaleY(1.05);}
+    50%{opacity:.8; transform:translateX(.5%) scaleY(.97);}
+    75%{opacity:.95; transform:translateX(-1.5%) scaleY(1.03);}
+  }
+  body.low-power #setup::after{ animation:none !important; }
   .ember{
-    position:absolute; bottom:0; border-radius:50%; background:var(--amber);
+    position:absolute; bottom:0; z-index:2; border-radius:50%; background:var(--amber);
     box-shadow:0 0 6px 2px rgba(242,169,0,.7);
     animation:ember-rise linear infinite;
     opacity:0;
@@ -81,6 +100,7 @@
     100%{transform:translateY(-380px); opacity:0;}
   }
   body.low-power .ember{ display:none !important; }
+  .card{ position:relative; z-index:2; }
   #setup .card-body{padding:24px 26px 24px;}
   #setup h1, #statsModal h1, #rulesModal h1{
     font-size:38px; line-height:.95; margin:14px 0 2px; color:var(--text-hi);
