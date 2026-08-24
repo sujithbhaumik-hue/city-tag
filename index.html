@@ -255,6 +255,7 @@
     margin-top:8px; width:100%; border:1px solid var(--dglass-border); background:rgba(255,255,255,.05); color:var(--text-lo);
     border-radius:999px; padding:6px 10px; font-size:11.5px; font-weight:700; cursor:pointer;
     transition:transform .15s, background .15s, color .15s, border-color .15s;
+    outline:none;
   }
   #endGameBtn:hover{background:rgba(224,51,43,.15); color:#ff9d92; border-color:rgba(224,51,43,.4);}
   #endGameBtn:active{transform:translateY(1px);}
@@ -478,7 +479,11 @@
       </div>
       <div class="power-entry">
         <b>🧨 Sabotage</b>
-        <p>Drops a temporary red zone somewhere random on the map, visible to everyone. Anyone inside it gets the same warning as stepping outside the main boundary.</p>
+        <p>Drops a temporary red zone near a runner — not right on top of them, but close enough to force a detour. Anyone inside it gets the same warning as stepping outside the main boundary.</p>
+      </div>
+      <div class="power-entry">
+        <b>🚨 Train Sabotage</b>
+        <p>Marks a whole train line as restricted for a while, chosen near a runner (but never the line they're currently on). Same warning zone as Sabotage, just following the track instead of a circle.</p>
       </div>
       <p style="text-transform:none; font-weight:500; opacity:.65; margin-top:14px; color:var(--text-lo);">More powers are on the way — this list will grow.</p>
     </div>
@@ -1432,6 +1437,54 @@ async function spawnRandomPowerup(){
   }catch(e){ console.error('spawn failed', e); }
 }
 
+// Finds a current runner's live position to use as a targeting anchor for
+// Sabotage/Train Sabotage — reads real roles directly from Firebase (not the
+// anonymized view a runner-collector would see on their own map), since this
+// is background placement logic, not something the player is manually aiming.
+async function pickNearbyRunnerAnchor(){
+  try{
+    const snap = await db.ref('players').once('value');
+    const all = snap.val() || {};
+    const now = Date.now();
+    const runners = Object.entries(all)
+      .filter(([id, p]) => p && p.role === 'runner' && p.ts && (now - p.ts) < STALE_AFTER && id !== myId)
+      .map(([id, p]) => ({ lat: p.lat, lng: p.lng }));
+    if(runners.length > 0) return runners[Math.floor(Math.random() * runners.length)];
+    // no other runners visible — fall back to self if self is a runner, else null
+    const self = all[myId];
+    if(self && self.role === 'runner') return { lat: self.lat, lng: self.lng };
+    return null;
+  }catch(e){ console.error('pickNearbyRunnerAnchor failed', e); return null; }
+}
+
+// A point offset a random distance/direction from an anchor — used so a
+// sabotage zone lands NEAR a runner (forcing a detour) without literally
+// sitting on top of them. Retries if the offset lands outside the boundary.
+function offsetPointNear(lat, lng, minM, maxM){
+  for(let tries = 0; tries < 20; tries++){
+    const bearing = Math.random() * 360 * Math.PI / 180;
+    const dist = minM + Math.random() * (maxM - minM);
+    const dLat = (dist * Math.cos(bearing)) / 111320;
+    const dLng = (dist * Math.sin(bearing)) / (111320 * Math.cos(lat * Math.PI / 180));
+    const newLat = lat + dLat, newLng = lng + dLng;
+    if(pointInBoundary(newLat, newLng)) return [newLat, newLng];
+  }
+  return null;
+}
+
+function minDistToLine(lat, lng, lineKey){
+  const track = REAL_TRACKS[lineKey];
+  if(!track) return Infinity;
+  let min = Infinity;
+  track.segments.forEach(seg => {
+    for(let i = 0; i < seg.length - 1; i++){
+      const d = distPointToSegmentMeters(lat, lng, seg[i], seg[i+1]);
+      if(d < min) min = d;
+    }
+  });
+  return min;
+}
+
 async function collectPowerup(id){
   const p = lastKnownPowerups[id];
   if(!p){ return; }
@@ -1442,13 +1495,37 @@ async function collectPowerup(id){
     await db.ref('powerups/' + id).remove();
 
     if(def.worldEffect){
-      // World-effect powers (like Sabotage) don't attach to the collector — they
-      // create something everyone can see/interact with, placed randomly in bounds.
-      const [zLat, zLng] = randomPointInBoundary();
-      await db.ref('sabotageZones').push({
-        type: p.type, lat: zLat, lng: zLng,
-        radius: def.radius, createdBy: myName, createdAt: now, expiresAt: now + def.duration
-      });
+      const anchor = await pickNearbyRunnerAnchor();
+
+      if(def.isLineSabotage){
+        // Pick a line near the anchor runner, but never one they're actively
+        // on (that would just be dropping them directly in a restricted zone
+        // rather than making them detour around one).
+        let lineKey;
+        const keys = Object.keys(REAL_TRACKS);
+        if(anchor){
+          const ranked = keys
+            .map(k => ({ k, d: minDistToLine(anchor.lat, anchor.lng, k) }))
+            .filter(x => x.d >= 100) // exclude lines the runner is currently on/right next to
+            .sort((a,b) => a.d - b.d);
+          lineKey = ranked.length ? ranked[0].k : keys[Math.floor(Math.random() * keys.length)];
+        } else {
+          lineKey = keys[Math.floor(Math.random() * keys.length)];
+        }
+        await db.ref('sabotageZones').push({
+          type: p.type, isLineSabotage: true, lineKey,
+          radius: def.radius, createdBy: myName, createdAt: now, expiresAt: now + def.duration
+        });
+      } else {
+        let zLat, zLng;
+        const offset = anchor ? offsetPointNear(anchor.lat, anchor.lng, 80, 180) : null;
+        if(offset){ [zLat, zLng] = offset; } else { [zLat, zLng] = randomPointInBoundary(); }
+        await db.ref('sabotageZones').push({
+          type: p.type, lat: zLat, lng: zLng,
+          radius: def.radius, createdBy: myName, createdAt: now, expiresAt: now + def.duration
+        });
+      }
+      refreshSabotageZones();
     } else {
       myActivePower = { type: p.type, activatedAt: now, expiresAt: now + def.duration };
       await db.ref('players/' + myId + '/activePower').set(myActivePower);
