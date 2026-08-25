@@ -126,7 +126,7 @@
   }
   .role-btn .role-icon{font-size:26px; line-height:1;}
   .role-btn small{font-weight:600; font-size:11px; color:var(--text-lo);}
-  .role-btn:hover{transform:translateY(-2px); border-color:rgba(255,255,255,.3);}
+  .role-btn:hover{background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.3);}
   .role-btn:active{transform:translateY(0);}
   .role-btn.active[data-role="tagger"]{border-color:var(--tagger); background:rgba(224,51,43,.16); color:#ff9d92; box-shadow:0 0 16px rgba(224,51,43,.35);}
   .role-btn.active[data-role="runner"]{border-color:var(--runner); background:rgba(34,119,196,.18); color:#8fc4ef; box-shadow:0 0 16px rgba(34,119,196,.35);}
@@ -142,7 +142,7 @@
     transition:transform .15s, box-shadow .15s;
     outline:none;
   }
-  #startBtn:hover{transform:translateY(-2px); box-shadow:0 0 30px rgba(224,51,43,.55);}
+  #startBtn:hover{box-shadow:0 0 30px rgba(224,51,43,.55);}
   #startBtn:active{transform:translateY(0); box-shadow:0 0 14px rgba(224,51,43,.35);}
   #startBtn:disabled{opacity:.4; cursor:not-allowed;}
   #setupError{color:#ff7a70; font-size:12.5px; margin-top:10px; min-height:14px; font-weight:700;}
@@ -153,7 +153,7 @@
     transition:transform .15s, border-color .15s;
     outline:none;
   }
-  #googleSignInBtn:hover{transform:translateY(-2px); border-color:rgba(255,255,255,.35);}
+  #googleSignInBtn:hover{background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.35);}
   #googleSignInBtn:active{transform:translateY(0);}
   #accountRow{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
   #accountName{font-size:13px; font-weight:700; color:var(--text-lo);}
@@ -164,18 +164,18 @@
     transition:transform .15s, border-color .15s;
     outline:none;
   }
-  #signOutBtn:hover, #closeStatsBtn:hover, #closeRulesBtn:hover{border-color:rgba(255,255,255,.35); transform:translateY(-1px);}
+  #signOutBtn:hover, #closeStatsBtn:hover, #closeRulesBtn:hover{background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.35);}
   #rulesBody{color:var(--text-lo);}
   #rulesBody b{color:var(--text-hi);}
   #statsBtn, #rulesBtn{width:100%; margin-bottom:6px; font-weight:800;}
-  #statsBtn:hover, #rulesBtn:hover{border-color:rgba(242,169,0,.5); transform:translateY(-1px);}
+  #statsBtn:hover, #rulesBtn:hover{background:rgba(255,255,255,.1); border-color:rgba(242,169,0,.5);}
   #resetStatsBtn{
     width:100%; margin-top:10px; border:1.5px solid rgba(224,51,43,.4); background:rgba(224,51,43,.1); color:#ff9d92;
     border-radius:999px; padding:8px 11px; font-size:12px; font-weight:700; cursor:pointer;
     transition:transform .15s, border-color .15s;
     outline:none;
   }
-  #resetStatsBtn:hover{border-color:rgba(224,51,43,.8); transform:translateY(-1px);}
+  #resetStatsBtn:hover{background:rgba(224,51,43,.18); border-color:rgba(224,51,43,.8);}
   #closeStatsBtn, #closeRulesBtn{width:100%; margin-top:10px;}
   #statsModal, #rulesModal{
     position:fixed; inset:0; z-index:2500;
@@ -339,7 +339,7 @@
     text-transform:uppercase; letter-spacing:.3px;
     box-shadow:2px 2px 0 var(--ink); transition:transform .15s, box-shadow .15s;
   }
-  .tag-btn:hover{transform:translateY(-2px) scale(1.05); box-shadow:4px 5px 0 var(--ink);}
+  .tag-btn:hover{background:var(--tagger-dark); box-shadow:4px 5px 0 var(--ink);}
   .tag-btn:active{background:var(--tagger-dark); transform:translate(2px,2px); box-shadow:0 0 0 var(--ink);}
   .station-label{
     background:rgba(246,244,239,.94) !important; color:var(--ink) !important;
@@ -1361,13 +1361,20 @@ async function refreshSabotageZones(){
       if(sabotageMarkers[id]) continue; // zones are static once created, nothing to update
 
       if(z.isLineSabotage && REAL_TRACKS[z.lineKey]){
+        // Full line, solid and opaque — this should read as "this whole line
+        // is red now", not a thin marker laid over part of it. A wide, soft,
+        // low-opacity halo underneath plus a bright crisp core on top fakes a
+        // glow without any animation loop (keeps this cheap to render).
         const group = L.layerGroup();
         REAL_TRACKS[z.lineKey].segments.forEach(seg => {
-          const pl = L.polyline(seg, {
-            pane: 'sabotagePane', color: '#d1352f', weight: 10, opacity: 0.55, dashArray: '4 8'
+          L.polyline(seg, {
+            pane: 'sabotagePane', color: '#ff2b1f', weight: 20, opacity: 0.25, lineCap: 'round', lineJoin: 'round'
           }).addTo(group);
-          pl.bindPopup(buildZonePopup(id, z));
-          pl.on('popupopen', () => pl.setPopupContent(buildZonePopup(id, z)));
+          const core = L.polyline(seg, {
+            pane: 'sabotagePane', color: '#ff2b1f', weight: 7, opacity: 1, lineCap: 'round', lineJoin: 'round'
+          }).addTo(group);
+          core.bindPopup(buildZonePopup(id, z));
+          core.on('popupopen', () => core.setPopupContent(buildZonePopup(id, z)));
         });
         group.addTo(map);
         sabotageMarkers[id] = group;
