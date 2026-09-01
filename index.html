@@ -209,7 +209,7 @@
     gap:10px; pointer-events:none;
   }
   .panel{
-    background:var(--dglass-bg-strong); backdrop-filter:blur(16px) saturate(140%); -webkit-backdrop-filter:blur(16px) saturate(140%);
+    background:rgba(20,18,19,.94);
     border-radius:16px; padding:10px 14px;
     border:1px solid var(--dglass-border);
     box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06); pointer-events:auto;
@@ -224,6 +224,7 @@
   .pill.runner{background:var(--runner); color:#fff;}
   #boundsStatus{font-weight:700; margin-top:4px; color:var(--text-hi);}
   #activePowerStatus{margin-top:4px; font-weight:700; color:#ff9d92;}
+  #radarStatus{margin-top:4px; font-weight:700; color:#7fd9ff;}
   #nearestPower{margin-top:4px; color:var(--text-lo); font-size:11.5px;}
   .power-entry{
     background:rgba(255,255,255,.05); border:1.5px solid var(--dglass-border); border-radius:14px;
@@ -241,7 +242,7 @@
   #boundsStatus.out{color:#ff9d92;}
   #globalCountdown{
     position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:1001;
-    background:var(--dglass-bg-strong); backdrop-filter:blur(16px) saturate(140%); -webkit-backdrop-filter:blur(16px) saturate(140%);
+    background:rgba(20,18,19,.94);
     color:var(--text-hi); padding:7px 16px; border-radius:20px; border:1px solid rgba(242,169,0,.4);
     font-size:12.5px; font-weight:700; display:flex; align-items:center; gap:6px;
     box-shadow:0 8px 24px rgba(0,0,0,.4); pointer-events:none;
@@ -262,7 +263,7 @@
 
   #legend{
     position:fixed; bottom:14px; left:12px; z-index:1000;
-    background:var(--dglass-bg-strong); backdrop-filter:blur(16px) saturate(140%); -webkit-backdrop-filter:blur(16px) saturate(140%);
+    background:rgba(20,18,19,.94);
     border:1px solid var(--dglass-border); border-radius:16px; padding:8px 12px;
     font-size:11.5px; color:var(--text-hi);
     box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
@@ -279,16 +280,14 @@
      killing transition alone still let buttons jump instantly to their
      enlarged state, which wasn't actually fixing anything. Resetting
      transform is what matters both visually and for performance, since
-     scale/translate on hover is what forces a repaint. Backdrop-filter over
-     the live panning map is the other real cost, so low power mode drops it
-     entirely on every HUD surface, falling back to a solid dark panel. */
+     scale/translate on hover is what forces a repaint. In-game HUD panels
+     use a solid dark background rather than backdrop-filter blur at all now
+     (see .panel/#legend/#styleSwitch/#globalCountdown/#recenterBtn) — blur
+     over a continuously-repainting live map caused real visual glitching on
+     hover, not just a performance cost, so it's gone outright rather than
+     just disabled here. */
   body.low-power *{ animation:none !important; transition:none !important; }
   body.low-power .me-marker-ring{ display:none !important; }
-  body.low-power .panel, body.low-power #legend, body.low-power #styleSwitch,
-  body.low-power #globalCountdown, body.low-power #recenterBtn{
-    backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
-    background:rgba(20,18,19,.96) !important;
-  }
   body.low-power .role-btn:hover,
   body.low-power #startBtn:hover,
   body.low-power #googleSignInBtn:hover,
@@ -308,7 +307,7 @@
   #recenterBtn{
     position:fixed; bottom:64px; right:12px; z-index:1000;
     width:38px; height:38px; border-radius:50%; border:1px solid var(--dglass-border);
-    background:var(--dglass-bg-strong); backdrop-filter:blur(16px) saturate(140%); -webkit-backdrop-filter:blur(16px) saturate(140%);
+    background:rgba(20,18,19,.94);
     font-size:17px; cursor:pointer;
     box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
     display:flex; align-items:center; justify-content:center;
@@ -318,7 +317,7 @@
 
   #styleSwitch{
     position:fixed; bottom:14px; right:12px; z-index:1000;
-    display:flex; background:var(--dglass-bg-strong); backdrop-filter:blur(16px) saturate(140%); -webkit-backdrop-filter:blur(16px) saturate(140%);
+    display:flex; background:rgba(20,18,19,.94);
     border:1px solid var(--dglass-border); border-radius:16px; padding:4px;
     box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06); gap:3px;
   }
@@ -501,6 +500,7 @@
     <b id="meName">—</b><span class="pill" id="mePill">—</span>
     <div id="boundsStatus">checking location…</div>
     <div id="activePowerStatus" style="display:none;"></div>
+    <div id="radarStatus" style="display:none;"></div>
     <div id="nearestPower" style="display:none;"></div>
     <button id="endGameBtn" type="button">End game</button>
   </div>
@@ -732,6 +732,10 @@ const POWERUP_TYPES = {
   trainSabotage: { label: 'Train Sabotage', icon: '🚨', duration: 5 * 60 * 1000, radius: 60,
     worldEffect: true, isLineSabotage: true,
     blurb: "Marks a random train line as restricted along its entire length." },
+  radar: { label: 'Radar Scanner', icon: '📡', duration: 3 * 60 * 1000, isRadar: true,
+    blurb: "Your whole team goes live-tracking for each other — no more waiting on blips." },
+  reveal: { label: 'Reveal', icon: '🔍', duration: 3 * 60 * 1000,
+    blurb: "Shows you everyone's real role — tagger or runner — while it lasts." },
 };
 const POWERUP_TARGET_COUNT = 3;       // how many should be sitting on the map at once
 const POWERUP_LIFESPAN = 8 * 60 * 1000; // how long an unclaimed powerup sits before expiring
@@ -750,6 +754,44 @@ let myActivePower = null;   // { type, activatedAt, expiresAt } or null
 let lastKnownPowerups = {}; // cached from last Firebase read, used for nearest-power HUD
 const sabotageMarkers = {}; // id -> L.circle
 let lastKnownZones = {};
+
+/* ---------- Radar Scanner: per-role shared broadcast window ---------- */
+// { tagger: expiresAtMs, runner: expiresAtMs } — synced in real time via Firebase.
+// Activating radar as one role only speeds up broadcasting for that same role;
+// this is a team-coordination tool, not a way to spy on the other side.
+let radarState = { tagger: 0, runner: 0 };
+let radarFastMode = false;
+let radarFastPushTimer = null;
+let radarFastPollTimer = null;
+const RADAR_FAST_INTERVAL = 4000; // how often to push/poll while radar is active
+
+function isRadarActiveForMe(){
+  return Date.now() < (radarState[myRole] || 0);
+}
+
+function adjustRadarMode(){
+  const active = isRadarActiveForMe();
+  if(active && !radarFastMode){
+    radarFastMode = true;
+    radarFastPushTimer = setInterval(() => { if(myCurrentPos) pushMyLocation(); }, RADAR_FAST_INTERVAL);
+    radarFastPollTimer = setInterval(refreshOthers, RADAR_FAST_INTERVAL);
+  } else if(!active && radarFastMode){
+    radarFastMode = false;
+    clearInterval(radarFastPushTimer); radarFastPushTimer = null;
+    clearInterval(radarFastPollTimer); radarFastPollTimer = null;
+  }
+  updateRadarStatusHud();
+}
+
+function updateRadarStatusHud(){
+  const el = document.getElementById('radarStatus');
+  if(!el) return;
+  if(!isRadarActiveForMe()){ el.style.display = 'none'; return; }
+  const secsLeft = Math.max(0, Math.round(((radarState[myRole]||0) - Date.now())/1000));
+  const m = Math.floor(secsLeft/60), s = secsLeft%60;
+  el.style.display = 'block';
+  el.textContent = '📡 Team radar active — ' + m + 'm ' + String(s).padStart(2,'0') + 's';
+}
 
 /* ---------- Auth ---------- */
 document.getElementById('googleSignInBtn').addEventListener('click', () => {
@@ -870,6 +912,11 @@ function startGame(){
   setInterval(refreshPowerups, POWERUP_CHECK_INTERVAL);
   setInterval(refreshSabotageZones, POWERUP_CHECK_INTERVAL);
   setInterval(updateActivePowerStatusHud, 1000);
+  setInterval(adjustRadarMode, 1000); // catches expiry even without a new Firebase write
+  db.ref('radarActiveUntil').on('value', snap => {
+    radarState = snap.val() || { tagger: 0, runner: 0 };
+    adjustRadarMode();
+  });
   refreshOthers();
   refreshPowerups();
   refreshSabotageZones();
@@ -902,7 +949,7 @@ window.addEventListener('DOMContentLoaded', () => {
 /* ---------- Map ---------- */
 let currentBaseLayer;
 const BASE_LAYERS = {
-  clean: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  clean: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_2m47_1_d16dbbdbbcb9eb12a44f5657', {
     maxZoom: 20,
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
   }),
@@ -1533,6 +1580,10 @@ async function collectPowerup(id){
         });
       }
       refreshSabotageZones();
+    } else if(def.isRadar){
+      // Shared per-role broadcast window — only speeds up pushing for
+      // players on the SAME side as the activator, not the opposing role.
+      await db.ref('radarActiveUntil/' + myRole).set(now + def.duration);
     } else {
       myActivePower = { type: p.type, activatedAt: now, expiresAt: now + def.duration };
       await db.ref('players/' + myId + '/activePower').set(myActivePower);
