@@ -126,7 +126,7 @@
   }
   .role-btn .role-icon{font-size:26px; line-height:1;}
   .role-btn small{font-weight:600; font-size:11px; color:var(--text-lo);}
-  .role-btn:hover{background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.3);}
+  .role-btn.js-hover{background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.3);}
   .role-btn:active{transform:translateY(0);}
   .role-btn.active[data-role="tagger"]{border-color:var(--tagger); background:rgba(224,51,43,.16); color:#ff9d92; box-shadow:0 0 16px rgba(224,51,43,.35);}
   .role-btn.active[data-role="runner"]{border-color:var(--runner); background:rgba(34,119,196,.18); color:#8fc4ef; box-shadow:0 0 16px rgba(34,119,196,.35);}
@@ -153,7 +153,7 @@
     transition:transform .15s, border-color .15s;
     outline:none;
   }
-  #googleSignInBtn:hover{background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.35);}
+  #googleSignInBtn.js-hover{background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.35);}
   #googleSignInBtn:active{transform:translateY(0);}
   #accountRow{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
   #accountName{font-size:13px; font-weight:700; color:var(--text-lo);}
@@ -164,18 +164,18 @@
     transition:transform .15s, border-color .15s;
     outline:none;
   }
-  #signOutBtn:hover, #closeStatsBtn:hover, #closeRulesBtn:hover{background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.35);}
+  #signOutBtn.js-hover, #closeStatsBtn.js-hover, #closeRulesBtn.js-hover{background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.35);}
   #rulesBody{color:var(--text-lo);}
   #rulesBody b{color:var(--text-hi);}
   #statsBtn, #rulesBtn{width:100%; margin-bottom:6px; font-weight:800;}
-  #statsBtn:hover, #rulesBtn:hover{background:rgba(255,255,255,.1); border-color:rgba(242,169,0,.5);}
+  #statsBtn.js-hover, #rulesBtn.js-hover{background:rgba(255,255,255,.1); border-color:rgba(242,169,0,.5);}
   #resetStatsBtn{
     width:100%; margin-top:10px; border:1.5px solid rgba(224,51,43,.4); background:rgba(224,51,43,.1); color:#ff9d92;
     border-radius:999px; padding:8px 11px; font-size:12px; font-weight:700; cursor:pointer;
     transition:transform .15s, border-color .15s;
     outline:none;
   }
-  #resetStatsBtn:hover{background:rgba(224,51,43,.18); border-color:rgba(224,51,43,.8);}
+  #resetStatsBtn.js-hover{background:rgba(224,51,43,.18); border-color:rgba(224,51,43,.8);}
   #closeStatsBtn, #closeRulesBtn{width:100%; margin-top:10px;}
   #statsModal, #rulesModal{
     position:fixed; inset:0; z-index:2500;
@@ -209,7 +209,7 @@
     gap:10px; pointer-events:none;
   }
   .panel{
-    background:rgba(20,18,19,.94);
+    background:rgba(20,18,19,.78);
     border-radius:16px; padding:10px 14px;
     border:1px solid var(--dglass-border);
     box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06); pointer-events:auto;
@@ -242,7 +242,7 @@
   #boundsStatus.out{color:#ff9d92;}
   #globalCountdown{
     position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:1001;
-    background:rgba(20,18,19,.94);
+    background:rgba(20,18,19,.78);
     color:var(--text-hi); padding:7px 16px; border-radius:20px; border:1px solid rgba(242,169,0,.4);
     font-size:12.5px; font-weight:700; display:flex; align-items:center; gap:6px;
     box-shadow:0 8px 24px rgba(0,0,0,.4); pointer-events:none;
@@ -258,12 +258,12 @@
     transition:transform .15s, background .15s, color .15s, border-color .15s;
     outline:none;
   }
-  #endGameBtn:hover{background:rgba(224,51,43,.15); color:#ff9d92; border-color:rgba(224,51,43,.4);}
+  #endGameBtn.js-hover{background:rgba(224,51,43,.15); color:#ff9d92; border-color:rgba(224,51,43,.4);}
   #endGameBtn:active{transform:translateY(1px);}
 
   #legend{
     position:fixed; bottom:14px; left:12px; z-index:1000;
-    background:rgba(20,18,19,.94);
+    background:rgba(20,18,19,.78);
     border:1px solid var(--dglass-border); border-radius:16px; padding:8px 12px;
     font-size:11.5px; color:var(--text-hi);
     box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
@@ -307,7 +307,7 @@
   #recenterBtn{
     position:fixed; bottom:64px; right:12px; z-index:1000;
     width:38px; height:38px; border-radius:50%; border:1px solid var(--dglass-border);
-    background:rgba(20,18,19,.94);
+    background:rgba(20,18,19,.78);
     font-size:17px; cursor:pointer;
     box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
     display:flex; align-items:center; justify-content:center;
@@ -317,7 +317,7 @@
 
   #styleSwitch{
     position:fixed; bottom:14px; right:12px; z-index:1000;
-    display:flex; background:rgba(20,18,19,.94);
+    display:flex; background:rgba(20,18,19,.78);
     border:1px solid var(--dglass-border); border-radius:16px; padding:4px;
     box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06); gap:3px;
   }
@@ -326,9 +326,9 @@
     font-size:11.5px; font-weight:700; color:var(--text-lo); cursor:pointer;
     transition:background .15s, color .15s;
   }
-  .style-btn:hover{background:rgba(255,255,255,.1); color:var(--text-hi);}
+  .style-btn.js-hover{background:rgba(255,255,255,.1); color:var(--text-hi);}
   .style-btn.active{background:var(--tagger); color:#fff;}
-  .style-btn.active:hover{background:var(--tagger);}
+  .style-btn.active.js-hover{background:var(--tagger);}
 
   .leaflet-popup-content{font-size:12.5px; margin:8px 10px;}
   .leaflet-popup-content b{font-size:13px;}
@@ -338,7 +338,7 @@
     text-transform:uppercase; letter-spacing:.3px;
     box-shadow:2px 2px 0 var(--ink); transition:transform .15s, box-shadow .15s;
   }
-  .tag-btn:hover{background:var(--tagger-dark); box-shadow:4px 5px 0 var(--ink);}
+  .tag-btn.js-hover{background:var(--tagger-dark); box-shadow:4px 5px 0 var(--ink);}
   .tag-btn:active{background:var(--tagger-dark); transform:translate(2px,2px); box-shadow:0 0 0 var(--ink);}
   .station-label{
     background:rgba(246,244,239,.94) !important; color:var(--ink) !important;
@@ -945,6 +945,25 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+/* Hover highlight driven by JS instead of native CSS :hover — something in the
+   app's periodic refresh cycle was intermittently disrupting native :hover
+   rendering on the map page (first hover would flash and drop, second hover
+   was fine — a hallmark of a reflow interrupting hover recalculation, not a
+   CSS bug). A manually-toggled class is immune to that regardless of root
+   cause. Uses document-level delegation (mouseover/mouseout, which bubble —
+   mouseenter/mouseleave don't) so it also covers Tag/Collect buttons that get
+   created dynamically inside Leaflet popups. */
+const JS_HOVER_SELECTOR = '.role-btn, #googleSignInBtn, #signOutBtn, #closeStatsBtn, #closeRulesBtn, '
+  + '#statsBtn, #rulesBtn, #resetStatsBtn, #endGameBtn, .style-btn, .tag-btn';
+document.addEventListener('mouseover', (e) => {
+  const el = e.target.closest(JS_HOVER_SELECTOR);
+  if(el) el.classList.add('js-hover');
+});
+document.addEventListener('mouseout', (e) => {
+  const el = e.target.closest(JS_HOVER_SELECTOR);
+  if(el && !el.contains(e.relatedTarget)) el.classList.remove('js-hover');
+});
+
 
 /* ---------- Map ---------- */
 let currentBaseLayer;
@@ -1544,6 +1563,13 @@ async function collectPowerup(id){
   if(!p){ return; }
   const def = POWERUP_TYPES[p.type];
   const now = Date.now();
+
+  // Remove immediately, synchronously — otherwise the marker/popup stays
+  // clickable for the several seconds until the next refreshPowerups cycle,
+  // letting a fast double-tap collect the same powerup twice.
+  delete lastKnownPowerups[id];
+  if(powerupMarkers[id]){ map.removeLayer(powerupMarkers[id]); delete powerupMarkers[id]; }
+  map.closePopup();
 
   try{
     await db.ref('powerups/' + id).remove();
