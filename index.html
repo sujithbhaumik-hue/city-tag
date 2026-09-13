@@ -63,12 +63,18 @@
   }
   .hazard-stripe{
     height:10px;
+    /* Wider than its container and shifted left so the pattern's own hard
+       edges sit outside the visible area — the parent .card already clips
+       overflow-x, so what's actually visible never shows a cut-off stripe
+       at either end, however the animation lines up at any given instant. */
+    width:calc(100% + 60px);
+    margin-left:-30px;
     background-image:repeating-linear-gradient(45deg, var(--amber) 0 10px, var(--ink) 10px 20px);
     animation:hazard-scroll 1s linear infinite;
   }
   @keyframes hazard-scroll{
     from{ background-position-x: 0; }
-    to{ background-position-x: 28px; }
+    to{ background-position-x: 28.284271px; }
   }
   body.low-power .hazard-stripe{ animation:none !important; }
 
@@ -150,7 +156,6 @@
   }
   .role-btn .role-icon{font-size:26px; line-height:1;}
   .role-btn small{font-weight:600; font-size:11px; color:var(--text-lo);}
-  .role-btn.js-hover, .role-btn:hover{background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.3);}
   .role-btn:active{transform:translateY(0);}
   .role-btn.active[data-role="tagger"]{border-color:var(--tagger); background:rgba(224,51,43,.16); color:#ff9d92; box-shadow:0 0 16px rgba(224,51,43,.35);}
   .role-btn.active[data-role="runner"]{border-color:var(--runner); background:rgba(34,119,196,.18); color:#8fc4ef; box-shadow:0 0 16px rgba(34,119,196,.35);}
@@ -183,7 +188,6 @@
     transition:transform .15s, border-color .15s;
     outline:none;
   }
-  #googleSignInBtn.js-hover, #googleSignInBtn:hover{background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.35);}
   #googleSignInBtn:active{transform:translateY(0);}
   #accountRow{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
   #accountName{font-size:13px; font-weight:700; color:var(--text-lo);}
@@ -194,19 +198,15 @@
     transition:transform .15s, border-color .15s;
     outline:none;
   }
-  #signOutBtn.js-hover, #closeStatsBtn.js-hover, #closeRulesBtn.js-hover,
-  #signOutBtn:hover, #closeStatsBtn:hover, #closeRulesBtn:hover{background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.35);}
   #rulesBody{color:var(--text-lo);}
   #rulesBody b{color:var(--text-hi);}
   #statsBtn, #rulesBtn{width:100%; margin-bottom:6px; font-weight:800;}
-  #statsBtn.js-hover, #rulesBtn.js-hover, #statsBtn:hover, #rulesBtn:hover{background:rgba(255,255,255,.1); border-color:rgba(242,169,0,.5);}
   #resetStatsBtn{
     width:100%; margin-top:10px; border:1.5px solid rgba(224,51,43,.4); background:rgba(224,51,43,.1); color:#ff9d92;
     border-radius:999px; padding:8px 11px; font-size:12px; font-weight:700; cursor:pointer;
     transition:transform .15s, border-color .15s;
     outline:none;
   }
-  #resetStatsBtn.js-hover, #resetStatsBtn:hover{background:rgba(224,51,43,.18); border-color:rgba(224,51,43,.8);}
   #closeStatsBtn, #closeRulesBtn{width:100%; margin-top:10px;}
   /* ========================================================== */
   /* STATS & RULES MODALS
@@ -225,6 +225,7 @@
     border-radius:24px;
     box-shadow:0 24px 70px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06);
   }
+  #statsModal .card, #rulesModal .card{ max-width:420px; }
   #statsBody{margin-top:14px;}
   /* ========================================================== */
   /* STATS — SCORE CARD GRID
@@ -243,10 +244,31 @@
   /* IN-GAME HUD — MAP & LAYOUT SHELL
   /* ========================================================== */
   #map{position:fixed; inset:0;}
-  /* Entering the game: setup fades out, HUD/legend/countdown/recenter/style
-     switch fade in together, instead of the previous instant display swap. */
-  #setup{ transition:opacity .35s ease; }
-  #setup.fading-out{ opacity:0; pointer-events:none; }
+  /* Entering the game: setup zooms down toward the bottom of the screen
+     while fading out, a black flash bridges the cut, and the HUD/legend/
+     countdown/recenter/style switch fade in as the black clears — instead
+     of the previous instant display swap. */
+  #setup{ transform-origin:50% 100%; transition:opacity .35s ease; }
+  #setup.zoom-out{
+    animation:setup-zoom-out .5s cubic-bezier(.4,0,.7,1) forwards;
+  }
+  @keyframes setup-zoom-out{
+    0%{ transform:scale(1) translateY(0); opacity:1; }
+    100%{ transform:scale(.8) translateY(70px); opacity:0; }
+  }
+  #transitionBlack{
+    position:fixed; inset:0; z-index:1900; background:#000;
+    opacity:0; pointer-events:none; display:none;
+  }
+  #transitionBlack.playing{
+    display:block;
+    animation:transition-flash .9s ease-in-out forwards;
+  }
+  @keyframes transition-flash{
+    0%{opacity:0;}
+    45%{opacity:1;}
+    100%{opacity:0;}
+  }
   #hud, #legend, #globalCountdown, #recenterBtn, #styleSwitch{
     opacity:0; transition:opacity .5s ease;
   }
@@ -254,8 +276,9 @@
     opacity:1;
   }
   body.low-power #setup, body.low-power #hud, body.low-power #legend,
-  body.low-power #globalCountdown, body.low-power #recenterBtn, body.low-power #styleSwitch{
-    transition:none !important;
+  body.low-power #globalCountdown, body.low-power #recenterBtn, body.low-power #styleSwitch,
+  body.low-power #transitionBlack{
+    transition:none !important; animation:none !important;
   }
   #hud{
     position:fixed; top:12px; left:12px; right:12px; z-index:1000;
@@ -280,7 +303,6 @@
   #activePowerStatus{margin-top:4px; font-weight:700; color:#ff9d92;}
   #radarStatus{margin-top:4px; font-weight:700; color:#7fd9ff;}
   #huntStatus{margin-top:4px; font-weight:700; color:#ffb066;}
-  #huntStatus .hunt-arrow{display:inline-block; margin-right:4px;}
   #nearestPower{margin-top:4px; color:var(--text-lo); font-size:11.5px;}
   .power-entry{
     background:rgba(255,255,255,.05); border:1.5px solid var(--dglass-border); border-radius:14px;
@@ -294,7 +316,6 @@
     color:var(--ink); font-weight:800; font-size:12px; cursor:pointer;
     text-transform:uppercase; letter-spacing:.3px; box-shadow:0 3px 0 var(--ink);
   }
-  .powerup-popup .collect-btn:hover{ background:#ffcf4d; }
   #boundsStatus.in{color:#5fd97a;}
   #boundsStatus.out{color:#ff9d92;}
   /* ========================================================== */
@@ -321,7 +342,6 @@
     transition:transform .15s, background .15s, color .15s, border-color .15s;
     outline:none;
   }
-  #endGameBtn.js-hover, #endGameBtn:hover{background:rgba(224,51,43,.15); color:#ff9d92; border-color:rgba(224,51,43,.4);}
   #endGameBtn:active{transform:translateY(1px);}
 
   /* ========================================================== */
@@ -401,9 +421,7 @@
     font-size:11.5px; font-weight:700; color:var(--text-lo); cursor:pointer;
     transition:background .15s, color .15s;
   }
-  .style-btn.js-hover, .style-btn:hover{background:rgba(255,255,255,.1); color:var(--text-hi);}
   .style-btn.active{background:var(--tagger); color:#fff;}
-  .style-btn.active.js-hover, .style-btn.active:hover{background:var(--tagger);}
 
   /* ========================================================== */
   /* MAP MARKERS & POPUPS — SHARED STYLES + TAG BUTTON
@@ -416,7 +434,6 @@
     text-transform:uppercase; letter-spacing:.3px;
     box-shadow:2px 2px 0 var(--ink); transition:transform .15s, box-shadow .15s;
   }
-  .tag-btn.js-hover, .tag-btn:hover{background:var(--tagger-dark); box-shadow:4px 5px 0 var(--ink);}
   .tag-btn:active{background:var(--tagger-dark); transform:translate(2px,2px); box-shadow:0 0 0 var(--ink);}
   /* ========================================================== */
   /* MAP MARKERS & POPUPS — TRAIN STATIONS & TRACK TOOLTIPS
@@ -758,11 +775,11 @@
         <p>Removes you from everyone else's map for a while — you keep playing and pushing blips as normal, other players just can't see your dot.</p>
       </div>
       <div class="power-entry">
-        <b>🧨 Sabotage</b>
+        <b>🧨 Sabotage</b> <span style="opacity:.6; font-weight:600;">— taggers only</span>
         <p>Drops a temporary red zone near a runner — not right on top of them, but close enough to force a detour. Anyone inside it gets the same warning as stepping outside the main boundary.</p>
       </div>
       <div class="power-entry">
-        <b>🚨 Train Sabotage</b>
+        <b>🚨 Train Sabotage</b> <span style="opacity:.6; font-weight:600;">— taggers only</span>
         <p>Marks a whole train line as restricted for a while, chosen near a runner (but never the line they're currently on). Same warning zone as Sabotage, just following the track instead of a circle.</p>
       </div>
       <div class="power-entry">
@@ -783,11 +800,11 @@
       </div>
       <div class="power-entry">
         <b>🧭 Hunt</b> <span style="opacity:.6; font-weight:600;">— taggers only</span>
-        <p>Gives you a compass bearing and a rough distance band to the nearest runner for a while — a direction to head, not their exact spot.</p>
+        <p>Locks onto the nearest runner and highlights their live location on your map for a while, refreshed faster than the normal blip.</p>
       </div>
       <div class="power-entry">
-        <b>💉 Antidote</b> <span style="opacity:.6; font-weight:600;">— runners only</span>
-        <p>Makes you immune to Sabotage and Train Sabotage zones for a while — walk straight through them without the warning.</p>
+        <b>🧪 Unstable Antidote</b>
+        <p>A gamble, for either side: 66% chance it converts a random player from the other side to yours. 33% chance it backfires and converts one of your own instead.</p>
       </div>
     </div>
     <button id="closeRulesBtn" type="button">Close</button>
@@ -796,6 +813,7 @@
 </div>
 
 <div id="map"></div>
+<div id="transitionBlack"></div>
 
 <div id="globalCountdown" style="display:none;"><span class="live-dot"></span>Next blip in —</div>
 
@@ -1097,6 +1115,8 @@ let lastKnownZones = {};
 let revealedTargetId = null; // Reveal powerup: permanently-known real role of one other player
 const cloneMarkers = {};     // id -> L.marker, for Clone decoys
 const ghostMarkers = {};     // id -> L.circleMarker, for Ghost Trail decoys
+let huntTargetId = null;     // Hunt powerup: locked-on runner id, live-tracked while active
+let huntMarker = null;       // L.marker highlighting the hunted runner's live location
 
 /* ---------- Radar Scanner: per-role shared broadcast window ---------- */
 // { tagger: expiresAtMs, runner: expiresAtMs } — synced in real time via Firebase.
@@ -1257,24 +1277,36 @@ function startGame(){
   db.ref('users/' + myId + '/stats/gamesPlayed').transaction(v => (v || 0) + 1);
 
   const setupEl = document.getElementById('setup');
+  const blackEl = document.getElementById('transitionBlack');
   const hudEl = document.getElementById('hud');
   const legendEl = document.getElementById('legend');
   const countdownEl = document.getElementById('globalCountdown');
   const recenterEl = document.getElementById('recenterBtn');
   const styleSwitchEl = document.getElementById('styleSwitch');
+  const revealHud = () => {
+    hudEl.style.display = 'flex';
+    legendEl.style.display = 'block';
+    countdownEl.style.display = 'flex';
+    recenterEl.style.display = 'flex';
+    styleSwitchEl.style.display = 'flex';
+    requestAnimationFrame(() => {
+      [hudEl, legendEl, countdownEl, recenterEl, styleSwitchEl].forEach(el => el.classList.add('visible'));
+    });
+  };
 
-  // Fade the setup card out, and fade the HUD/legend/countdown/recenter/style
-  // switch in together, rather than the old instant display:none/flex swap.
-  setupEl.classList.add('fading-out');
-  setTimeout(() => { setupEl.style.display = 'none'; }, 350);
-  hudEl.style.display = 'flex';
-  legendEl.style.display = 'block';
-  countdownEl.style.display = 'flex';
-  recenterEl.style.display = 'flex';
-  styleSwitchEl.style.display = 'flex';
-  requestAnimationFrame(() => {
-    [hudEl, legendEl, countdownEl, recenterEl, styleSwitchEl].forEach(el => el.classList.add('visible'));
-  });
+  if(document.body.classList.contains('low-power')){
+    // Skip the whole animated sequence in low-power mode — straight cut.
+    setupEl.style.display = 'none';
+    revealHud();
+  } else {
+    // Setup zooms down toward the bottom of the screen and fades out; a
+    // black flash bridges the cut; the HUD fades in as the black clears.
+    setupEl.classList.add('zoom-out');
+    blackEl.classList.add('playing');
+    setTimeout(revealHud, 350);              // HUD starts fading in as black nears its peak
+    setTimeout(() => { setupEl.style.display = 'none'; }, 500);
+    setTimeout(() => { blackEl.classList.remove('playing'); blackEl.style.display = 'none'; }, 900);
+  }
 
   document.getElementById('meName').textContent = myName;
   const pill = document.getElementById('mePill');
@@ -1333,27 +1365,11 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-/* Hover highlight driven by JS instead of native CSS :hover — something in the
-   app's periodic refresh cycle was intermittently disrupting native :hover
-   rendering on the map page (first hover would flash and drop, second hover
-   was fine — a hallmark of a reflow interrupting hover recalculation, not a
-   CSS bug). A manually-toggled class is immune to that regardless of root
-   cause. Uses document-level delegation (mouseover/mouseout, which bubble —
-   mouseenter/mouseleave don't) so it also covers Tag/Collect buttons that get
-   created dynamically inside Leaflet popups. */
-/* ------------------------------------------------------------ */
-/* UI — JS-DRIVEN HOVER HIGHLIGHTS (see note below on why not native :hover) */
-/* ------------------------------------------------------------ */
-const JS_HOVER_SELECTOR = '.role-btn, #googleSignInBtn, #signOutBtn, #closeStatsBtn, #closeRulesBtn, '
-  + '#statsBtn, #rulesBtn, #resetStatsBtn, #endGameBtn, .style-btn, .tag-btn';
-document.addEventListener('mouseover', (e) => {
-  const el = e.target.closest(JS_HOVER_SELECTOR);
-  if(el) el.classList.add('js-hover');
-});
-document.addEventListener('mouseout', (e) => {
-  const el = e.target.closest(JS_HOVER_SELECTOR);
-  if(el && !el.contains(e.relatedTarget)) el.classList.remove('js-hover');
-});
+/* Hover highlighting removed for now (the previous JS-driven approach kept
+   flickering — the highlight would flash on and disappear again while the
+   cursor was still over the button). Buttons are fully usable without it;
+   a proper hover treatment can be re-added later once it's reliable. */
+
 
 
 /* ---------- Map ---------- */
@@ -1544,8 +1560,7 @@ function drawMe(){
     meMarker.setLatLng([lat,lng]);
   }
   const inside = pointInBoundary(lat, lng);
-  const antidoteActive = myActivePower && myActivePower.type === 'antidote' && myActivePower.expiresAt > Date.now();
-  const inSabotage = !antidoteActive && inAnySabotageZone(lat, lng);
+  const inSabotage = inAnySabotageZone(lat, lng);
   const statusEl = document.getElementById('boundsStatus');
   if(!inside){
     statusEl.textContent = '⚠️ Outside the boundary!';
@@ -1553,9 +1568,6 @@ function drawMe(){
   } else if(inSabotage){
     statusEl.textContent = '🧨 Inside a sabotage zone!';
     statusEl.className = 'out';
-  } else if(antidoteActive && inAnySabotageZone(lat, lng)){
-    statusEl.textContent = '💉 Immune — sabotage zone ignored';
-    statusEl.className = 'in';
   } else {
     statusEl.textContent = '✅ Inside the boundary';
     statusEl.className = 'in';
@@ -1674,40 +1686,50 @@ async function refreshClones(){
 }
 
 /* ------------------------------------------------------------ */
-/* POWERUP: HUNT — BEARING/DISTANCE-BAND COMPASS TO NEAREST RUNNER */
+/* POWERUP: HUNT — LIVE LOCATION TRACKING OF THE LOCKED-ON RUNNER */
 /* ------------------------------------------------------------ */
-function distanceBand(m){
-  if(m < 100) return 'right on top of them';
-  if(m < 300) return 'very close (~' + Math.round(m/50)*50 + 'm)';
-  if(m < 800) return 'close by';
-  if(m < 2000) return 'a fair walk away';
-  return 'far across the grid';
+function clearHuntMarker(){
+  if(huntMarker){ map.removeLayer(huntMarker); huntMarker = null; }
 }
 
 async function updateHuntHud(){
   const el = document.getElementById('huntStatus');
   if(!el) return;
-  if(!myActivePower || myActivePower.type !== 'hunt' || myActivePower.expiresAt <= Date.now() || !myCurrentPos){
+  const active = myActivePower && myActivePower.type === 'hunt' && myActivePower.expiresAt > Date.now();
+  if(!active || !huntTargetId){
     el.style.display = 'none';
+    clearHuntMarker();
     return;
   }
   try{
-    const snap = await db.ref('players').once('value');
-    const all = snap.val() || {};
+    const snap = await db.ref('players/' + huntTargetId).once('value');
+    const target = snap.val();
     const now = Date.now();
-    let nearest = null, nearestDist = Infinity;
-    for(const [id, data] of Object.entries(all)){
-      if(id === myId || !data || data.isGhost || data.role !== 'runner') continue;
-      if(now - (data.ts||0) > STALE_AFTER) continue;
-      const d = distMeters(myCurrentPos.lat, myCurrentPos.lng, data.lat, data.lng);
-      if(d < nearestDist){ nearestDist = d; nearest = data; }
+    if(!target || (now - (target.ts||0)) > STALE_AFTER){
+      el.style.display = 'block';
+      el.textContent = '🧭 Target lost — no longer detected.';
+      clearHuntMarker();
+      return;
     }
-    if(!nearest){ el.style.display = 'block'; el.textContent = '🧭 No runners detected nearby.'; return; }
-    const dLat = (nearest.lat - myCurrentPos.lat) * 111320;
-    const dLng = (nearest.lng - myCurrentPos.lng) * 111320 * Math.cos(myCurrentPos.lat * Math.PI/180);
-    const bearing = (Math.atan2(dLng, dLat) * 180 / Math.PI + 360) % 360;
+    const dist = myCurrentPos ? Math.round(distMeters(myCurrentPos.lat, myCurrentPos.lng, target.lat, target.lng)) : null;
     el.style.display = 'block';
-    el.innerHTML = '<span class="hunt-arrow" style="display:inline-block; transform:rotate(' + Math.round(bearing) + 'deg);">↑</span>Nearest runner: ' + distanceBand(nearestDist);
+    el.textContent = '🧭 Hunting ' + target.name + (dist !== null ? ' — ' + dist + 'm away' : '');
+
+    // A distinct highlighted marker for the hunted runner's live position,
+    // separate from their normal dot (which only refreshes on the shared
+    // player-refresh cycle) — Hunt polls this one directly and faster.
+    if(!huntMarker){
+      const icon = L.divIcon({
+        className: '',
+        html: '<div class="me-marker-wrap"><div class="me-marker-ring" style="border-color:#ffb066;"></div>'
+            + '<div class="me-marker-dot" style="background:#ffb066;"></div></div>',
+        iconSize: [20, 20], iconAnchor: [10, 10]
+      });
+      huntMarker = L.marker([target.lat, target.lng], { icon, pane: 'playersPane', zIndexOffset: 500 })
+        .addTo(map).bindPopup('<b>' + escapeHtml(target.name) + '</b> (hunted)');
+    } else {
+      huntMarker.setLatLng([target.lat, target.lng]);
+    }
   }catch(e){ console.error('hunt update failed', e); }
 }
 
@@ -2175,14 +2197,49 @@ async function collectPowerup(id){
         createdAt: now, expiresAt: now + def.duration
       });
     } else if(def.isHunt){
+      // Lock onto whichever runner is nearest right now and keep polling
+      // their entry directly (faster than the normal 5-minute blip refresh)
+      // so their live location is highlighted on the map for the duration.
+      const snap = await db.ref('players').once('value');
+      const all = snap.val() || {};
+      let nearestId = null, nearestDist = Infinity;
+      for(const [pid, pd] of Object.entries(all)){
+        if(pid === myId || !pd || pd.isGhost || pd.role !== 'runner') continue;
+        if(now - (pd.ts||0) > STALE_AFTER) continue;
+        const d = distMeters(myCurrentPos.lat, myCurrentPos.lng, pd.lat, pd.lng);
+        if(d < nearestDist){ nearestDist = d; nearestId = pid; }
+      }
+      huntTargetId = nearestId;
       myActivePower = { type: p.type, activatedAt: now, expiresAt: now + def.duration };
-      // Hunt doesn't need to touch Firebase — it's just a local compass
-      // reading computed from data every client already has.
+      if(huntTargetId){
+        showBanner(def.icon + ' Hunt locked onto ' + escapeHtml(all[huntTargetId].name || 'a runner') + '!');
+      } else {
+        showBanner('🧭 No runners detected nearby to hunt.');
+      }
       updateHuntHud();
-    } else if(def.isAntidote){
-      myActivePower = { type: p.type, activatedAt: now, expiresAt: now + def.duration };
-      await db.ref('players/' + myId + '/activePower').set(myActivePower);
-      drawMe(); // recompute bounds/sabotage status immediately, now immune
+    } else if(def.isUnstableAntidote){
+      // Instant, one-shot gamble — no personal timer, so this returns early
+      // just like Reveal.
+      const snap = await db.ref('players').once('value');
+      const all = snap.val() || {};
+      const oppositeRole = myRole === 'runner' ? 'tagger' : 'runner';
+      const success = Math.random() < 0.66;
+      const targetRole = success ? oppositeRole : myRole;
+      const newRole = success ? myRole : oppositeRole;
+      const candidates = Object.keys(all).filter(pid =>
+        pid !== myId && all[pid] && !all[pid].isGhost && all[pid].role === targetRole && (now - (all[pid].ts||0)) < STALE_AFTER
+      );
+      if(candidates.length){
+        const targetId = candidates[Math.floor(Math.random() * candidates.length)];
+        await db.ref('players/' + targetId).update({ role: newRole });
+        showBanner(success
+          ? (def.icon + ' It worked! A ' + oppositeRole + ' just became a ' + myRole + '.')
+          : (def.icon + ' Backfired! One of your own is now a ' + oppositeRole + '.'));
+      } else {
+        showBanner(def.icon + ' No valid target for the antidote right now.');
+      }
+      updateActivePowerStatusHud();
+      return; // instant effect, nothing further to do
     } else if(def.worldEffect){
       const anchor = await pickNearbyRunnerAnchor();
 
@@ -2238,7 +2295,7 @@ function updateActivePowerStatusHud(){
   if(!myActivePower || myActivePower.expiresAt <= Date.now()){
     if(myActivePower){ // just expired — clear it server-side too
       if(myActivePower.type === 'ghostTrail') clearGhostDecoys();
-      if(myActivePower.type === 'antidote') drawMe(); // re-check bounds now immunity is gone
+      if(myActivePower.type === 'hunt'){ huntTargetId = null; clearHuntMarker(); const hs = document.getElementById('huntStatus'); if(hs) hs.style.display = 'none'; }
       myActivePower = null;
       db.ref('players/' + myId + '/activePower').remove();
     }
