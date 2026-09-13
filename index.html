@@ -258,6 +258,8 @@
   #boundsStatus{font-weight:700; margin-top:4px; color:var(--text-hi);}
   #activePowerStatus{margin-top:4px; font-weight:700; color:#ff9d92;}
   #radarStatus{margin-top:4px; font-weight:700; color:#7fd9ff;}
+  #huntStatus{margin-top:4px; font-weight:700; color:#ffb066;}
+  #huntStatus .hunt-arrow{display:inline-block; margin-right:4px;}
   #nearestPower{margin-top:4px; color:var(--text-lo); font-size:11.5px;}
   .power-entry{
     background:rgba(255,255,255,.05); border:1.5px solid var(--dglass-border); border-radius:14px;
@@ -709,7 +711,7 @@
   <div class="card">
     <div class="hazard-stripe"></div>
     <div class="card-body">
-    <h1>My <span>Stats</span></h1>
+    <h1 class="display">My <span>Stats</span></h1>
     <div id="statsBody">Loading…</div>
     <button id="resetStatsBtn" type="button">Reset my stats</button>
     <button id="closeStatsBtn" type="button">Close</button>
@@ -721,7 +723,7 @@
   <div class="card">
     <div class="hazard-stripe"></div>
     <div class="card-body">
-    <h1>Powers <span>&amp; Rules</span></h1>
+    <h1 class="display">Powers <span>&amp; Rules</span></h1>
     <div id="rulesBody" class="sub" style="text-transform:none; font-weight:500; letter-spacing:0; line-height:1.6;">
       <p><b>Powerups</b> spawn randomly around the map. Tap one to see what it does and how long it's got left, then hit Collect to grab it.</p>
       <div class="power-entry">
@@ -736,7 +738,30 @@
         <b>🚨 Train Sabotage</b>
         <p>Marks a whole train line as restricted for a while, chosen near a runner (but never the line they're currently on). Same warning zone as Sabotage, just following the track instead of a circle.</p>
       </div>
-      <p style="text-transform:none; font-weight:500; opacity:.65; margin-top:14px; color:var(--text-lo);">More powers are on the way — this list will grow.</p>
+      <div class="power-entry">
+        <b>📡 Radar Scanner</b>
+        <p>Your whole team switches to fast live-tracking of each other for a while, instead of waiting on the shared 5-minute blip.</p>
+      </div>
+      <div class="power-entry">
+        <b>🔍 Reveal</b> <span style="opacity:.6; font-weight:600;">— runners only</span>
+        <p>Permanently locks onto one random other player and shows you their true role forever, even after this game ends — no timer on this one.</p>
+      </div>
+      <div class="power-entry">
+        <b>👻 Ghost Trail</b> <span style="opacity:.6; font-weight:600;">— runners only</span>
+        <p>Spawns a few decoy dots near you that blip on your same schedule. Taggers see them exactly like a real runner — they can't tell which dot is really you.</p>
+      </div>
+      <div class="power-entry">
+        <b>🫂 Clone</b>
+        <p>Drops a static decoy of yourself somewhere else on the grid. It shows up on everyone's map exactly like you normally would, for as long as it lasts.</p>
+      </div>
+      <div class="power-entry">
+        <b>🧭 Hunt</b> <span style="opacity:.6; font-weight:600;">— taggers only</span>
+        <p>Gives you a compass bearing and a rough distance band to the nearest runner for a while — a direction to head, not their exact spot.</p>
+      </div>
+      <div class="power-entry">
+        <b>💉 Antidote</b> <span style="opacity:.6; font-weight:600;">— runners only</span>
+        <p>Makes you immune to Sabotage and Train Sabotage zones for a while — walk straight through them without the warning.</p>
+      </div>
     </div>
     <button id="closeRulesBtn" type="button">Close</button>
     </div>
@@ -753,6 +778,7 @@
     <div id="boundsStatus">checking location…</div>
     <div id="activePowerStatus" style="display:none;"></div>
     <div id="radarStatus" style="display:none;"></div>
+    <div id="huntStatus" style="display:none;"></div>
     <div id="nearestPower" style="display:none;"></div>
     <button id="endGameBtn" type="button">End game</button>
   </div>
@@ -1010,8 +1036,16 @@ const POWERUP_TYPES = {
     blurb: "Marks a random train line as restricted along its entire length." },
   radar: { label: 'Radar Scanner', icon: '📡', duration: 3 * 60 * 1000, isRadar: true,
     blurb: "Your whole team goes live-tracking for each other — no more waiting on blips." },
-  reveal: { label: 'Reveal', icon: '🔍', duration: 3 * 60 * 1000,
-    blurb: "Shows you everyone's real role — tagger or runner — while it lasts." },
+  reveal: { label: 'Reveal', icon: '🔍', runnerOnly: true, isReveal: true,
+    blurb: "Runner-only. Permanently reveals one random player's true role to you, no matter who else moves or gets tagged." },
+  ghostTrail: { label: 'Ghost Trail', icon: '👻', runnerOnly: true, duration: 6 * 60 * 1000, isGhostTrail: true, ghostCount: 3,
+    blurb: "Runner-only. Spawns decoy dots near you for a while — taggers can't tell your real blip from the fakes." },
+  clone: { label: 'Clone', icon: '🫂', duration: 6 * 60 * 1000, isClone: true,
+    blurb: "Drops a static decoy of you elsewhere on the grid — it shows up on maps exactly like you would." },
+  hunt: { label: 'Hunt', icon: '🧭', taggerOnly: true, duration: 3 * 60 * 1000, isHunt: true,
+    blurb: "Tagger-only. Points you toward the nearest runner — a bearing and rough distance, not their exact spot." },
+  antidote: { label: 'Antidote', icon: '💉', runnerOnly: true, duration: 4 * 60 * 1000, isAntidote: true,
+    blurb: "Runner-only. Makes you immune to Sabotage and Train Sabotage zones for a while." },
 };
 const POWERUP_TARGET_COUNT = 3;       // how many should be sitting on the map at once
 const POWERUP_LIFESPAN = 8 * 60 * 1000; // how long an unclaimed powerup sits before expiring
@@ -1033,6 +1067,9 @@ let myActivePower = null;   // { type, activatedAt, expiresAt } or null
 let lastKnownPowerups = {}; // cached from last Firebase read, used for nearest-power HUD
 const sabotageMarkers = {}; // id -> L.circle
 let lastKnownZones = {};
+let revealedTargetId = null; // Reveal powerup: permanently-known real role of one other player
+const cloneMarkers = {};     // id -> L.marker, for Clone decoys
+const ghostMarkers = {};     // id -> L.circleMarker, for Ghost Trail decoys
 
 /* ---------- Radar Scanner: per-role shared broadcast window ---------- */
 // { tagger: expiresAtMs, runner: expiresAtMs } — synced in real time via Firebase.
@@ -1184,6 +1221,12 @@ function startGame(){
   localStorage.setItem('cityTagName', myName);
   localStorage.setItem('cityTagRole', myRole);
 
+  // Reveal is a permanent, single-player effect — it survives reloads and
+  // new games for this account, so it's read from localStorage (never sent
+  // to Firebase, since it's private knowledge belonging only to the runner
+  // who collected it).
+  revealedTargetId = localStorage.getItem('cityTagRevealed_' + myId) || null;
+
   db.ref('users/' + myId + '/stats/gamesPlayed').transaction(v => (v || 0) + 1);
 
   document.getElementById('setup').style.display = 'none';
@@ -1206,6 +1249,8 @@ function startGame(){
   setInterval(refreshPowerups, POWERUP_CHECK_INTERVAL);
   setInterval(refreshSabotageZones, POWERUP_CHECK_INTERVAL);
   setInterval(updateActivePowerStatusHud, 1000);
+  setInterval(updateHuntHud, 4000); // reads live player positions — no need for per-second polling
+  setInterval(refreshClones, POWERUP_CHECK_INTERVAL);
   setInterval(adjustRadarMode, 1000); // catches expiry even without a new Firebase write
   db.ref('radarActiveUntil').on('value', snap => {
     radarState = snap.val() || { tagger: 0, runner: 0 };
@@ -1214,6 +1259,7 @@ function startGame(){
   refreshOthers();
   refreshPowerups();
   refreshSabotageZones();
+  refreshClones();
 }
 
 /* ------------------------------------------------------------ */
@@ -1223,6 +1269,7 @@ document.getElementById('endGameBtn').addEventListener('click', async () => {
   if(!confirm("End the game and leave? You'll go back to the start screen — pick a fresh role if you want to play again.")) return;
   try{
     await db.ref('players/' + myId).remove(); // stop showing on everyone else's map
+    if(myActivePower && myActivePower.type === 'ghostTrail') clearGhostDecoys();
   }catch(e){ console.error('leave failed', e); }
   location.reload(); // simplest reliable way to stop all timers/GPS watchers and reset to setup
 });
@@ -1456,7 +1503,8 @@ function drawMe(){
     meMarker.setLatLng([lat,lng]);
   }
   const inside = pointInBoundary(lat, lng);
-  const inSabotage = inAnySabotageZone(lat, lng);
+  const antidoteActive = myActivePower && myActivePower.type === 'antidote' && myActivePower.expiresAt > Date.now();
+  const inSabotage = !antidoteActive && inAnySabotageZone(lat, lng);
   const statusEl = document.getElementById('boundsStatus');
   if(!inside){
     statusEl.textContent = '⚠️ Outside the boundary!';
@@ -1464,6 +1512,9 @@ function drawMe(){
   } else if(inSabotage){
     statusEl.textContent = '🧨 Inside a sabotage zone!';
     statusEl.className = 'out';
+  } else if(antidoteActive && inAnySabotageZone(lat, lng)){
+    statusEl.textContent = '💉 Immune — sabotage zone ignored';
+    statusEl.className = 'in';
   } else {
     statusEl.textContent = '✅ Inside the boundary';
     statusEl.className = 'in';
@@ -1518,7 +1569,105 @@ async function pushMyLocation(){
     };
     if(myActivePower && myActivePower.expiresAt > Date.now()) payload.activePower = myActivePower;
     await db.ref('players/' + myId).set(payload);
+    // Ghost Trail decoys blip on the exact same cadence as the real player,
+    // so they never stand out by moving on a different schedule.
+    if(myActivePower && myActivePower.type === 'ghostTrail' && myActivePower.expiresAt > Date.now()) pushGhostDecoys();
   }catch(e){ console.error('push failed', e); }
+}
+
+/* ------------------------------------------------------------ */
+/* POWERUP: GHOST TRAIL — DECOY PUSH & CLEANUP */
+/* ------------------------------------------------------------ */
+async function pushGhostDecoys(){
+  if(!myCurrentPos || !myActivePower || myActivePower.type !== 'ghostTrail') return;
+  const def = POWERUP_TYPES.ghostTrail;
+  const now = Date.now();
+  for(let i = 0; i < def.ghostCount; i++){
+    const ghostId = 'ghost_' + myId + '_' + i;
+    const [gLat, gLng] = offsetPointNear(myCurrentPos.lat, myCurrentPos.lng, 60, 260) || [myCurrentPos.lat, myCurrentPos.lng];
+    db.ref('players/' + ghostId).set({
+      name: myName, role: 'runner', lat: gLat, lng: gLng, ts: now, isGhost: true
+    }).catch(e => console.error('ghost push failed', e));
+  }
+}
+
+async function clearGhostDecoys(){
+  const def = POWERUP_TYPES.ghostTrail;
+  for(let i = 0; i < def.ghostCount; i++){
+    db.ref('players/ghost_' + myId + '_' + i).remove().catch(()=>{});
+  }
+}
+
+/* ------------------------------------------------------------ */
+/* POWERUP: CLONE — SPAWNING, RENDERING & CLEANUP */
+/* ------------------------------------------------------------ */
+async function refreshClones(){
+  try{
+    const snap = await db.ref('clones').once('value');
+    const all = snap.val() || {};
+    const now = Date.now();
+    const seen = new Set();
+
+    for(const [id, c] of Object.entries(all)){
+      if(!c || c.expiresAt < now){
+        db.ref('clones/' + id).remove(); // opportunistic cleanup
+        continue;
+      }
+      seen.add(id);
+      if(cloneMarkers[id]) continue; // clones are static, nothing to update
+
+      const iAmTagger = myRole === 'tagger';
+      const fillColor = iAmTagger ? (c.role === 'tagger' ? '#d1352f' : '#1f6fb2') : '#6b6f76';
+      const label = iAmTagger
+        ? '<b>' + escapeHtml(c.name) + '</b> (' + c.role + ')'
+        : '<b>' + escapeHtml(c.name) + '</b> (player)';
+      cloneMarkers[id] = L.circleMarker([c.lat, c.lng], {
+        pane: 'playersPane', radius: 8, color:'#fff', weight:2, fillColor, fillOpacity: 0.95
+      }).addTo(map).bindPopup(label);
+    }
+
+    Object.keys(cloneMarkers).forEach(id => {
+      if(!seen.has(id)){ map.removeLayer(cloneMarkers[id]); delete cloneMarkers[id]; }
+    });
+  }catch(e){ console.error('clone refresh failed', e); }
+}
+
+/* ------------------------------------------------------------ */
+/* POWERUP: HUNT — BEARING/DISTANCE-BAND COMPASS TO NEAREST RUNNER */
+/* ------------------------------------------------------------ */
+function distanceBand(m){
+  if(m < 100) return 'right on top of them';
+  if(m < 300) return 'very close (~' + Math.round(m/50)*50 + 'm)';
+  if(m < 800) return 'close by';
+  if(m < 2000) return 'a fair walk away';
+  return 'far across the grid';
+}
+
+async function updateHuntHud(){
+  const el = document.getElementById('huntStatus');
+  if(!el) return;
+  if(!myActivePower || myActivePower.type !== 'hunt' || myActivePower.expiresAt <= Date.now() || !myCurrentPos){
+    el.style.display = 'none';
+    return;
+  }
+  try{
+    const snap = await db.ref('players').once('value');
+    const all = snap.val() || {};
+    const now = Date.now();
+    let nearest = null, nearestDist = Infinity;
+    for(const [id, data] of Object.entries(all)){
+      if(id === myId || !data || data.isGhost || data.role !== 'runner') continue;
+      if(now - (data.ts||0) > STALE_AFTER) continue;
+      const d = distMeters(myCurrentPos.lat, myCurrentPos.lng, data.lat, data.lng);
+      if(d < nearestDist){ nearestDist = d; nearest = data; }
+    }
+    if(!nearest){ el.style.display = 'block'; el.textContent = '🧭 No runners detected nearby.'; return; }
+    const dLat = (nearest.lat - myCurrentPos.lat) * 111320;
+    const dLng = (nearest.lng - myCurrentPos.lng) * 111320 * Math.cos(myCurrentPos.lat * Math.PI/180);
+    const bearing = (Math.atan2(dLng, dLat) * 180 / Math.PI + 360) % 360;
+    el.style.display = 'block';
+    el.innerHTML = '<span class="hunt-arrow" style="display:inline-block; transform:rotate(' + Math.round(bearing) + 'deg);">↑</span>Nearest runner: ' + distanceBand(nearestDist);
+  }catch(e){ console.error('hunt update failed', e); }
 }
 
 /* ------------------------------------------------------------ */
@@ -1568,13 +1717,21 @@ async function refreshOthers(){
       const ageMin = Math.max(0, Math.round((Date.now() - data.ts)/60000));
       const seenText = ageMin === 0 ? 'just now' : ageMin + 'm ago';
 
+      // Reveal only grants *sight* of one target's true role — it never
+      // grants the ability to tag, so a runner who's revealed a tagger just
+      // sees a label, not a Tag button (only taggers ever get that button).
+      const isRevealedForMe = !iAmTagger && id === revealedTargetId;
+
       let popupHtml, fillColor;
       if(iAmTagger){
         popupHtml = '<b>' + escapeHtml(data.name) + '</b> (' + data.role + ')<br>last seen ' + seenText;
         fillColor = data.role === 'tagger' ? '#d1352f' : '#1f6fb2';
-        if(data.role === 'runner'){
+        if(data.role === 'runner' && !data.isGhost){
           popupHtml += '<br><button class="tag-btn" onclick="tagPlayer(\'' + id + '\')">Tag ' + escapeHtml(data.name) + '</button>';
         }
+      } else if(isRevealedForMe){
+        popupHtml = '<b>' + escapeHtml(data.name) + '</b> (' + data.role + ') 🔍<br>last seen ' + seenText;
+        fillColor = data.role === 'tagger' ? '#d1352f' : '#1f6fb2';
       } else {
         popupHtml = '<b>' + escapeHtml(data.name) + '</b> (player)<br>last seen ' + seenText;
         fillColor = '#6b6f76'; // neutral — role hidden from runners
@@ -1622,6 +1779,7 @@ function updateLegendForRole(){
 /* GAMEPLAY — TAGGING A RUNNER */
 /* ------------------------------------------------------------ */
 async function tagPlayer(targetId){
+  if(targetId.startsWith('ghost_')) return; // Ghost Trail decoys aren't real players
   try{
     await db.ref('players/' + targetId).update({ role: 'tagger' });
     db.ref('users/' + myId + '/stats/tagsMade').transaction(v => (v || 0) + 1);
@@ -1753,9 +1911,13 @@ function buildPowerupPopup(id, p){
   const def = POWERUP_TYPES[p.type];
   const secsLeft = Math.max(0, Math.round((p.expiresAt - Date.now())/1000));
   const m = Math.floor(secsLeft/60), s = secsLeft%60;
+  const roleLocked = (def.runnerOnly && myRole !== 'runner') || (def.taggerOnly && myRole !== 'tagger');
+  const action = roleLocked
+    ? '<br><span style="color:var(--text-lo); font-style:italic;">' + (def.runnerOnly ? 'Runners' : 'Taggers') + ' only — you can\'t use this as a ' + myRole + '.</span>'
+    : '<br><button class="collect-btn" onclick="collectPowerup(\'' + id + '\')">Collect</button>';
   return '<div class="powerup-popup"><b>' + def.icon + ' ' + def.label + '</b><br>'
     + def.blurb + '<br>Expires in ' + m + 'm ' + String(s).padStart(2,'0') + 's'
-    + '<br><button class="collect-btn" onclick="collectPowerup(\'' + id + '\')">Collect</button></div>';
+    + action + '</div>';
 }
 
 /* ---------- Sabotage zones (circular, and line-corridor for Train Sabotage) ---------- */
@@ -1921,6 +2083,12 @@ async function collectPowerup(id){
   const def = POWERUP_TYPES[p.type];
   const now = Date.now();
 
+  // Role-locked powers (Reveal/Ghost Trail/Antidote are runner-only, Hunt is
+  // tagger-only) shouldn't be collectible by the wrong side. The Collect
+  // button is already hidden for these in the popup — this is just a
+  // defensive backstop in case collectPowerup gets called some other way.
+  if((def.runnerOnly && myRole !== 'runner') || (def.taggerOnly && myRole !== 'tagger')) return;
+
   // Remove immediately, synchronously — otherwise the marker/popup stays
   // clickable for the several seconds until the next refreshPowerups cycle,
   // letting a fast double-tap collect the same powerup twice.
@@ -1931,7 +2099,45 @@ async function collectPowerup(id){
   try{
     await db.ref('powerups/' + id).remove();
 
-    if(def.worldEffect){
+    if(def.isReveal){
+      // Permanent, single-target, single-player effect: pick one random
+      // *other* currently-active player and remember them forever (kept in
+      // localStorage, never written to Firebase — this is private knowledge
+      // that belongs only to the runner who collected it, not something
+      // other players should be able to read off shared data).
+      const snap = await db.ref('players').once('value');
+      const all = snap.val() || {};
+      const candidates = Object.keys(all).filter(pid => pid !== myId && all[pid] && (now - (all[pid].ts||0)) < STALE_AFTER);
+      if(candidates.length){
+        revealedTargetId = candidates[Math.floor(Math.random() * candidates.length)];
+        localStorage.setItem('cityTagRevealed_' + myId, revealedTargetId);
+        showBanner(def.icon + ' Reveal locked onto ' + escapeHtml(all[revealedTargetId].name || 'a player') + '!');
+        refreshOthers();
+      } else {
+        showBanner('🔍 No one else is nearby to reveal yet.');
+      }
+      updateActivePowerStatusHud();
+      return; // no timed activePower — nothing further to do
+    } else if(def.isGhostTrail){
+      myActivePower = { type: p.type, activatedAt: now, expiresAt: now + def.duration };
+      await db.ref('players/' + myId + '/activePower').set(myActivePower);
+      pushGhostDecoys(); // seed decoys immediately rather than waiting for next blip
+    } else if(def.isClone){
+      const [cLat, cLng] = offsetPointNear(myCurrentPos.lat, myCurrentPos.lng, 120, 320) || randomPointInBoundary();
+      await db.ref('clones').push({
+        name: myName, role: myRole, lat: cLat, lng: cLng,
+        createdAt: now, expiresAt: now + def.duration
+      });
+    } else if(def.isHunt){
+      myActivePower = { type: p.type, activatedAt: now, expiresAt: now + def.duration };
+      // Hunt doesn't need to touch Firebase — it's just a local compass
+      // reading computed from data every client already has.
+      updateHuntHud();
+    } else if(def.isAntidote){
+      myActivePower = { type: p.type, activatedAt: now, expiresAt: now + def.duration };
+      await db.ref('players/' + myId + '/activePower').set(myActivePower);
+      drawMe(); // recompute bounds/sabotage status immediately, now immune
+    } else if(def.worldEffect){
       const anchor = await pickNearbyRunnerAnchor();
 
       if(def.isLineSabotage){
@@ -1985,6 +2191,8 @@ function updateActivePowerStatusHud(){
   const el = document.getElementById('activePowerStatus');
   if(!myActivePower || myActivePower.expiresAt <= Date.now()){
     if(myActivePower){ // just expired — clear it server-side too
+      if(myActivePower.type === 'ghostTrail') clearGhostDecoys();
+      if(myActivePower.type === 'antidote') drawMe(); // re-check bounds now immunity is gone
       myActivePower = null;
       db.ref('players/' + myId + '/activePower').remove();
     }
