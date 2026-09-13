@@ -63,8 +63,14 @@
   }
   .hazard-stripe{
     height:10px;
-    background:repeating-linear-gradient(45deg, var(--amber) 0 10px, var(--ink) 10px 20px);
+    background-image:repeating-linear-gradient(45deg, var(--amber) 0 10px, var(--ink) 10px 20px);
+    animation:hazard-scroll 1s linear infinite;
   }
+  @keyframes hazard-scroll{
+    from{ background-position-x: 0; }
+    to{ background-position-x: 28px; }
+  }
+  body.low-power .hazard-stripe{ animation:none !important; }
 
   /* ---- Setup screen ---- */
   /* ========================================================== */
@@ -114,7 +120,7 @@
   }
   body.low-power .ember{ display:none !important; }
   .card{ position:relative; z-index:2; }
-  #setup .card-body{padding:24px 26px 24px;}
+  .card-body{padding:24px 26px 24px;}
   /* ========================================================== */
   /* SETUP SCREEN — CARD, TITLE & FORM FIELDS
   /* ========================================================== */
@@ -144,7 +150,7 @@
   }
   .role-btn .role-icon{font-size:26px; line-height:1;}
   .role-btn small{font-weight:600; font-size:11px; color:var(--text-lo);}
-  .role-btn.js-hover{background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.3);}
+  .role-btn.js-hover, .role-btn:hover{background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.3);}
   .role-btn:active{transform:translateY(0);}
   .role-btn.active[data-role="tagger"]{border-color:var(--tagger); background:rgba(224,51,43,.16); color:#ff9d92; box-shadow:0 0 16px rgba(224,51,43,.35);}
   .role-btn.active[data-role="runner"]{border-color:var(--runner); background:rgba(34,119,196,.18); color:#8fc4ef; box-shadow:0 0 16px rgba(34,119,196,.35);}
@@ -177,7 +183,7 @@
     transition:transform .15s, border-color .15s;
     outline:none;
   }
-  #googleSignInBtn.js-hover{background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.35);}
+  #googleSignInBtn.js-hover, #googleSignInBtn:hover{background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.35);}
   #googleSignInBtn:active{transform:translateY(0);}
   #accountRow{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
   #accountName{font-size:13px; font-weight:700; color:var(--text-lo);}
@@ -188,18 +194,19 @@
     transition:transform .15s, border-color .15s;
     outline:none;
   }
-  #signOutBtn.js-hover, #closeStatsBtn.js-hover, #closeRulesBtn.js-hover{background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.35);}
+  #signOutBtn.js-hover, #closeStatsBtn.js-hover, #closeRulesBtn.js-hover,
+  #signOutBtn:hover, #closeStatsBtn:hover, #closeRulesBtn:hover{background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.35);}
   #rulesBody{color:var(--text-lo);}
   #rulesBody b{color:var(--text-hi);}
   #statsBtn, #rulesBtn{width:100%; margin-bottom:6px; font-weight:800;}
-  #statsBtn.js-hover, #rulesBtn.js-hover{background:rgba(255,255,255,.1); border-color:rgba(242,169,0,.5);}
+  #statsBtn.js-hover, #rulesBtn.js-hover, #statsBtn:hover, #rulesBtn:hover{background:rgba(255,255,255,.1); border-color:rgba(242,169,0,.5);}
   #resetStatsBtn{
     width:100%; margin-top:10px; border:1.5px solid rgba(224,51,43,.4); background:rgba(224,51,43,.1); color:#ff9d92;
     border-radius:999px; padding:8px 11px; font-size:12px; font-weight:700; cursor:pointer;
     transition:transform .15s, border-color .15s;
     outline:none;
   }
-  #resetStatsBtn.js-hover{background:rgba(224,51,43,.18); border-color:rgba(224,51,43,.8);}
+  #resetStatsBtn.js-hover, #resetStatsBtn:hover{background:rgba(224,51,43,.18); border-color:rgba(224,51,43,.8);}
   #closeStatsBtn, #closeRulesBtn{width:100%; margin-top:10px;}
   /* ========================================================== */
   /* STATS & RULES MODALS
@@ -236,6 +243,20 @@
   /* IN-GAME HUD — MAP & LAYOUT SHELL
   /* ========================================================== */
   #map{position:fixed; inset:0;}
+  /* Entering the game: setup fades out, HUD/legend/countdown/recenter/style
+     switch fade in together, instead of the previous instant display swap. */
+  #setup{ transition:opacity .35s ease; }
+  #setup.fading-out{ opacity:0; pointer-events:none; }
+  #hud, #legend, #globalCountdown, #recenterBtn, #styleSwitch{
+    opacity:0; transition:opacity .5s ease;
+  }
+  #hud.visible, #legend.visible, #globalCountdown.visible, #recenterBtn.visible, #styleSwitch.visible{
+    opacity:1;
+  }
+  body.low-power #setup, body.low-power #hud, body.low-power #legend,
+  body.low-power #globalCountdown, body.low-power #recenterBtn, body.low-power #styleSwitch{
+    transition:none !important;
+  }
   #hud{
     position:fixed; top:12px; left:12px; right:12px; z-index:1000;
     display:flex; justify-content:space-between; align-items:flex-start;
@@ -273,6 +294,7 @@
     color:var(--ink); font-weight:800; font-size:12px; cursor:pointer;
     text-transform:uppercase; letter-spacing:.3px; box-shadow:0 3px 0 var(--ink);
   }
+  .powerup-popup .collect-btn:hover{ background:#ffcf4d; }
   #boundsStatus.in{color:#5fd97a;}
   #boundsStatus.out{color:#ff9d92;}
   /* ========================================================== */
@@ -299,7 +321,7 @@
     transition:transform .15s, background .15s, color .15s, border-color .15s;
     outline:none;
   }
-  #endGameBtn.js-hover{background:rgba(224,51,43,.15); color:#ff9d92; border-color:rgba(224,51,43,.4);}
+  #endGameBtn.js-hover, #endGameBtn:hover{background:rgba(224,51,43,.15); color:#ff9d92; border-color:rgba(224,51,43,.4);}
   #endGameBtn:active{transform:translateY(1px);}
 
   /* ========================================================== */
@@ -379,9 +401,9 @@
     font-size:11.5px; font-weight:700; color:var(--text-lo); cursor:pointer;
     transition:background .15s, color .15s;
   }
-  .style-btn.js-hover{background:rgba(255,255,255,.1); color:var(--text-hi);}
+  .style-btn.js-hover, .style-btn:hover{background:rgba(255,255,255,.1); color:var(--text-hi);}
   .style-btn.active{background:var(--tagger); color:#fff;}
-  .style-btn.active.js-hover{background:var(--tagger);}
+  .style-btn.active.js-hover, .style-btn.active:hover{background:var(--tagger);}
 
   /* ========================================================== */
   /* MAP MARKERS & POPUPS — SHARED STYLES + TAG BUTTON
@@ -394,7 +416,7 @@
     text-transform:uppercase; letter-spacing:.3px;
     box-shadow:2px 2px 0 var(--ink); transition:transform .15s, box-shadow .15s;
   }
-  .tag-btn.js-hover{background:var(--tagger-dark); box-shadow:4px 5px 0 var(--ink);}
+  .tag-btn.js-hover, .tag-btn:hover{background:var(--tagger-dark); box-shadow:4px 5px 0 var(--ink);}
   .tag-btn:active{background:var(--tagger-dark); transform:translate(2px,2px); box-shadow:0 0 0 var(--ink);}
   /* ========================================================== */
   /* MAP MARKERS & POPUPS — TRAIN STATIONS & TRACK TOOLTIPS
@@ -547,9 +569,14 @@
   #setup .card{
     transition:transform .25s ease, box-shadow .25s ease;
   }
+  /* NOTE: no transform here — this codebase has a documented history of
+     translateY-on-:hover causing a hover feedback loop (the element shifts
+     under a stationary cursor, which can flip :hover on/off every frame).
+     A static border/shadow lift gives the same "lifted" feel with zero
+     layout movement, so it can never retrigger that bug. */
   #setup .card:hover{
-    transform:translateY(-3px);
     box-shadow:0 28px 78px rgba(0,0,0,.68), inset 0 1px 0 rgba(255,255,255,.08);
+    border-color:rgba(255,255,255,.16);
   }
 
   /* Role cards get a satisfying selection response. */
@@ -603,8 +630,8 @@
   .stat-card{
     transition:transform .18s ease, border-color .18s ease, background .18s ease;
   }
+  /* No transform on hover — see note above #setup .card:hover for why. */
   .stat-card:hover{
-    transform:translateY(-3px);
     border-color:rgba(242,169,0,.45);
     background:rgba(255,255,255,.075);
   }
@@ -621,8 +648,8 @@
   .power-entry{
     transition:transform .18s ease, border-color .18s ease, background .18s ease;
   }
+  /* No transform on hover — see note above #setup .card:hover for why. */
   .power-entry:hover{
-    transform:translateX(3px);
     border-color:rgba(242,169,0,.4);
     background:rgba(255,255,255,.075);
   }
@@ -1030,10 +1057,10 @@ const POWERUP_TYPES = {
   invisibility: { label: 'Invisibility', icon: '🫥', duration: 4 * 60 * 1000,
     blurb: "You're hidden from everyone else's map." },
   sabotage: { label: 'Sabotage', icon: '🧨', duration: 5 * 60 * 1000, radius: 100,
-    worldEffect: true, blurb: "Creates a temporary restricted zone wherever you're standing." },
+    worldEffect: true, taggerOnly: true, blurb: "Tagger-only. Creates a temporary restricted zone near a runner." },
   trainSabotage: { label: 'Train Sabotage', icon: '🚨', duration: 5 * 60 * 1000, radius: 60,
-    worldEffect: true, isLineSabotage: true,
-    blurb: "Marks a random train line as restricted along its entire length." },
+    worldEffect: true, isLineSabotage: true, taggerOnly: true,
+    blurb: "Tagger-only. Marks a random train line as restricted along its entire length." },
   radar: { label: 'Radar Scanner', icon: '📡', duration: 3 * 60 * 1000, isRadar: true,
     blurb: "Your whole team goes live-tracking for each other — no more waiting on blips." },
   reveal: { label: 'Reveal', icon: '🔍', runnerOnly: true, isReveal: true,
@@ -1043,9 +1070,9 @@ const POWERUP_TYPES = {
   clone: { label: 'Clone', icon: '🫂', duration: 6 * 60 * 1000, isClone: true,
     blurb: "Drops a static decoy of you elsewhere on the grid — it shows up on maps exactly like you would." },
   hunt: { label: 'Hunt', icon: '🧭', taggerOnly: true, duration: 3 * 60 * 1000, isHunt: true,
-    blurb: "Tagger-only. Points you toward the nearest runner — a bearing and rough distance, not their exact spot." },
-  antidote: { label: 'Antidote', icon: '💉', runnerOnly: true, duration: 4 * 60 * 1000, isAntidote: true,
-    blurb: "Runner-only. Makes you immune to Sabotage and Train Sabotage zones for a while." },
+    blurb: "Tagger-only. Locks onto the nearest runner and shows their live location on your map for a while." },
+  unstableAntidote: { label: 'Unstable Antidote', icon: '🧪', isUnstableAntidote: true,
+    blurb: "A gamble: 66% chance it converts a random player from the other side to your side. 33% chance it backfires and converts one of your own instead." },
 };
 const POWERUP_TARGET_COUNT = 3;       // how many should be sitting on the map at once
 const POWERUP_LIFESPAN = 8 * 60 * 1000; // how long an unclaimed powerup sits before expiring
@@ -1229,12 +1256,26 @@ function startGame(){
 
   db.ref('users/' + myId + '/stats/gamesPlayed').transaction(v => (v || 0) + 1);
 
-  document.getElementById('setup').style.display = 'none';
-  document.getElementById('hud').style.display = 'flex';
-  document.getElementById('legend').style.display = 'block';
-  document.getElementById('globalCountdown').style.display = 'flex';
-  document.getElementById('recenterBtn').style.display = 'flex';
-  document.getElementById('styleSwitch').style.display = 'flex';
+  const setupEl = document.getElementById('setup');
+  const hudEl = document.getElementById('hud');
+  const legendEl = document.getElementById('legend');
+  const countdownEl = document.getElementById('globalCountdown');
+  const recenterEl = document.getElementById('recenterBtn');
+  const styleSwitchEl = document.getElementById('styleSwitch');
+
+  // Fade the setup card out, and fade the HUD/legend/countdown/recenter/style
+  // switch in together, rather than the old instant display:none/flex swap.
+  setupEl.classList.add('fading-out');
+  setTimeout(() => { setupEl.style.display = 'none'; }, 350);
+  hudEl.style.display = 'flex';
+  legendEl.style.display = 'block';
+  countdownEl.style.display = 'flex';
+  recenterEl.style.display = 'flex';
+  styleSwitchEl.style.display = 'flex';
+  requestAnimationFrame(() => {
+    [hudEl, legendEl, countdownEl, recenterEl, styleSwitchEl].forEach(el => el.classList.add('visible'));
+  });
+
   document.getElementById('meName').textContent = myName;
   const pill = document.getElementById('mePill');
   pill.textContent = myRole;
@@ -1739,7 +1780,12 @@ async function refreshOthers(){
 
       if(otherMarkers[key]){
         otherMarkers[key].setLatLng([data.lat, data.lng]);
-        otherMarkers[key].setPopupContent(popupHtml);
+        // Skip rewriting the popup's innerHTML while it's open — replacing the
+        // DOM node under an open Tag button is exactly what was breaking its
+        // hover state (the browser has no element to keep :hover on once the
+        // old one is torn out from under the cursor). The popup just shows
+        // slightly stale "last seen" text until it's closed and reopened.
+        if(!otherMarkers[key].isPopupOpen()) otherMarkers[key].setPopupContent(popupHtml);
         otherMarkers[key].setStyle({ fillColor });
       } else {
         otherMarkers[key] = L.circleMarker([data.lat, data.lng], {
