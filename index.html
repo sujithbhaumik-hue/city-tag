@@ -249,21 +249,21 @@
   /* IN-GAME HUD — MAP & LAYOUT SHELL
   /* ========================================================== */
   #map{position:fixed; inset:0;}
-  /* Entering the game: the setup screen zooms in toward the Start button
-     (transform-origin set at runtime to the button's actual position) while
-     fading to black in the same motion, holds on black briefly, then clears
-     to reveal the map/HUD — instead of the previous instant display swap. */
+  /* Entering the game: a black overlay (drawn ABOVE the setup screen) starts
+     darkening the instant you click Start, while the setup screen underneath
+     zooms in toward the button — so it's already going dark as the zoom
+     happens, not just after. Black holds briefly at full, then clears to
+     reveal the map/HUD — instead of the previous instant display swap. */
   #setup{ transition:opacity .35s ease; }
   #setup.zoom-in{
     animation:setup-zoom-in 1.1s cubic-bezier(.6,.04,.9,.4) forwards;
   }
   @keyframes setup-zoom-in{
     0%{ transform:scale(1); opacity:1; }
-    60%{ opacity:1; }
     100%{ transform:scale(4.5); opacity:0; }
   }
   #transitionBlack{
-    position:fixed; inset:0; z-index:1900; background:#000;
+    position:fixed; inset:0; z-index:2100; background:#000;
     opacity:0; pointer-events:none; display:none;
   }
   #transitionBlack.playing{
@@ -272,8 +272,8 @@
   }
   @keyframes transition-flash{
     0%{opacity:0;}
-    60%{opacity:1;}
-    75%{opacity:1;}
+    65%{opacity:1;}
+    78%{opacity:1;}
     100%{opacity:0;}
   }
   #hud, #legend, #globalCountdown, #recenterBtn, #styleSwitch{
@@ -468,6 +468,24 @@
     100%{transform:scale(2.4); opacity:0;}
   }
 
+  /* Optional emoji badge shown above your own marker, with a small tail
+     pointing down at the dot — purely additive, wraps the existing
+     .me-marker-wrap without changing it (so the Hunt highlight marker,
+     which reuses the same wrap/ring/dot classes, is unaffected). */
+  .me-marker-outer{ position:relative; width:40px; height:56px; }
+  .me-marker-emoji-badge{
+    position:absolute; top:0; left:7px; width:26px; height:26px; border-radius:50%;
+    background:rgba(20,18,19,.88); border:2px solid var(--amber);
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; line-height:1; box-shadow:0 2px 6px rgba(0,0,0,.4);
+  }
+  .me-marker-emoji-tail{
+    position:absolute; top:24px; left:14px; width:0; height:0;
+    border-left:6px solid transparent; border-right:6px solid transparent;
+    border-top:7px solid var(--amber);
+  }
+  body.low-power .me-marker-emoji-badge{ box-shadow:none; }
+
   /* Powerup markers: pulsing glow so they're easy to spot on the map */
   /* ========================================================== */
   /* MAP MARKERS — POWERUP PICKUPS
@@ -594,13 +612,8 @@
     100%{transform:scale(1);}
   }
 
-  /* Inputs feel responsive without changing their behaviour. */
-  input[type=text]{
-    transition:border-color .18s ease, background .18s ease, box-shadow .18s ease;
-  }
-  input[type=text]:focus{
-    box-shadow:0 0 0 3px rgba(224,51,43,.12);
-  }
+  /* Name input keeps a simple, instant focus state — no transition/transform,
+     so there's nothing that can flash and revert while it's still focused. */
 
   /* Stats/rules cards enter with a small HUD-style deployment animation. */
   #statsModal,
@@ -644,7 +657,6 @@
   body.low-power .ui-click-pop,
   body.low-power .ui-ripple,
   body.low-power .role-btn.active,
-  body.low-power input[type=text]:focus,
   body.low-power #globalCountdown.ui-countdown-tick{
     animation:none !important;
     transform:none !important;
@@ -685,6 +697,9 @@
 
       <label for="nameInput">Your name</label>
       <input id="nameInput" type="text" placeholder="e.g. Jess" maxlength="20" autocomplete="off">
+
+      <label for="emojiInput">Marker emoji (optional)</label>
+      <input id="emojiInput" type="text" placeholder="📍" maxlength="4" autocomplete="off">
 
       <label>Pick a side</label>
       <div class="role-toggle">
@@ -747,12 +762,12 @@
         <p>Permanently locks onto one random other player and shows you their true role forever, even after this game ends — no timer on this one.</p>
       </div>
       <div class="power-entry">
-        <b>👻 Ghost Trail</b>
-        <p>Spawns a few decoy dots near you that blip on your same schedule. They show up exactly like you would — no one else can tell which dot is really you.</p>
+        <b>🫂 Clone</b>
+        <p>Spawns a few decoy dots that stick near you and blip on your same schedule. They show up exactly like you would — no one else can tell which dot is really you.</p>
       </div>
       <div class="power-entry">
-        <b>🫂 Clone</b>
-        <p>Drops a static decoy of yourself somewhere else on the grid. It shows up on everyone's map exactly like you normally would, for as long as it lasts.</p>
+        <b>👻 Ghost Trail</b>
+        <p>Spawns a single decoy that peels off in a random direction the moment you use it, and just keeps walking that way on its own — a false trail leading away from you.</p>
       </div>
       <div class="power-entry">
         <b>🧭 Hunt</b> <span style="opacity:.6; font-weight:600;">— taggers only</span>
@@ -1039,10 +1054,10 @@ const POWERUP_TYPES = {
     blurb: "Your whole team goes live-tracking for each other — no more waiting on blips." },
   reveal: { label: 'Reveal', icon: '🔍', runnerOnly: true, isReveal: true,
     blurb: "Runner-only. Permanently reveals one random player's true role to you, no matter who else moves or gets tagged." },
-  ghostTrail: { label: 'Ghost Trail', icon: '👻', duration: 6 * 60 * 1000, isGhostTrail: true, ghostCount: 3,
-    blurb: "Spawns decoy dots near you for a while, blipping on your same schedule — no one else can tell your real dot from the fakes." },
-  clone: { label: 'Clone', icon: '🫂', duration: 6 * 60 * 1000, isClone: true,
-    blurb: "Drops a static decoy of you elsewhere on the grid — it shows up on maps exactly like you would." },
+  clone: { label: 'Clone', icon: '🫂', duration: 6 * 60 * 1000, isClone: true, cloneCount: 3,
+    blurb: "Spawns a few decoy dots that stick near you and blip on your same schedule — no one else can tell your real dot from the fakes." },
+  ghostTrail: { label: 'Ghost Trail', icon: '👻', duration: 6 * 60 * 1000, isGhostTrail: true, stepMeters: 140,
+    blurb: "Spawns a single decoy that peels off in its own direction the moment you use it, and keeps moving that way on its own." },
   hunt: { label: 'Hunt', icon: '🧭', taggerOnly: true, duration: 3 * 60 * 1000, isHunt: true,
     blurb: "Tagger-only. Locks onto the nearest runner and shows their live location on your map for a while." },
   unstableAntidote: { label: 'Unstable Antidote', icon: '🧪', isUnstableAntidote: true,
@@ -1059,6 +1074,7 @@ const POWERUP_SPAWN_CHANCE = 0.35;    // per check, per client, when below targe
 /* ------------------------------------------------------------ */
 let myRole = 'tagger';
 let myName = '';
+let myEmoji = '';        // optional custom marker emoji shown above your own dot
 let myId = '';           // now the Firebase Auth UID — stable across devices/browsers
 let myCurrentPos = null;    // latest raw GPS reading (kept fresh locally)
 let map, boundaryLayer, meMarker;
@@ -1069,8 +1085,7 @@ let lastKnownPowerups = {}; // cached from last Firebase read, used for nearest-
 const sabotageMarkers = {}; // id -> L.circle
 let lastKnownZones = {};
 let revealedTargetId = null; // Reveal powerup: permanently-known real role of one other player
-const cloneMarkers = {};     // id -> L.marker, for Clone decoys
-const ghostMarkers = {};     // id -> L.circleMarker, for Ghost Trail decoys
+let ghostTrailState = null;  // Ghost Trail powerup: { lat, lng, bearingDeg } of the single wandering decoy
 let huntTargetId = null;     // Hunt powerup: locked-on runner id, live-tracked while active
 let huntMarker = null;       // L.marker highlighting the hunted runner's live location
 
@@ -1202,8 +1217,10 @@ document.getElementById('startBtn').addEventListener('click', startGame);
 /* ------------------------------------------------------------ */
 function startGame(){
   const nameField = document.getElementById('nameInput');
+  const emojiField = document.getElementById('emojiInput');
   const err = document.getElementById('setupError');
   myName = nameField.value.trim();
+  myEmoji = emojiField.value.trim();
   if(!myId){
     err.textContent = 'Sign in first so your stats are saved.';
     return;
@@ -1223,6 +1240,8 @@ function startGame(){
   if(savedRole !== myRole) localStorage.removeItem('cityTagLastPush');
   localStorage.setItem('cityTagName', myName);
   localStorage.setItem('cityTagRole', myRole);
+  if(myEmoji) localStorage.setItem('cityTagEmoji', myEmoji);
+  else localStorage.removeItem('cityTagEmoji');
 
   // Reveal is a permanent, single-player effect — it survives reloads and
   // new games for this account, so it's read from localStorage (never sent
@@ -1284,7 +1303,6 @@ function startGame(){
   setInterval(refreshSabotageZones, POWERUP_CHECK_INTERVAL);
   setInterval(updateActivePowerStatusHud, 1000);
   setInterval(updateHuntHud, 4000); // reads live player positions — no need for per-second polling
-  setInterval(refreshClones, POWERUP_CHECK_INTERVAL);
   setInterval(adjustRadarMode, 1000); // catches expiry even without a new Firebase write
   db.ref('radarActiveUntil').on('value', snap => {
     radarState = snap.val() || { tagger: 0, runner: 0 };
@@ -1293,7 +1311,6 @@ function startGame(){
   refreshOthers();
   refreshPowerups();
   refreshSabotageZones();
-  refreshClones();
 }
 
 /* ------------------------------------------------------------ */
@@ -1303,7 +1320,8 @@ document.getElementById('endGameBtn').addEventListener('click', async () => {
   if(!confirm("End the game and leave? You'll go back to the start screen — pick a fresh role if you want to play again.")) return;
   try{
     await db.ref('players/' + myId).remove(); // stop showing on everyone else's map
-    if(myActivePower && myActivePower.type === 'ghostTrail') clearGhostDecoys();
+    if(myActivePower && myActivePower.type === 'clone') clearCloneDecoys();
+    if(myActivePower && myActivePower.type === 'ghostTrail') clearGhostTrailDecoy();
   }catch(e){ console.error('leave failed', e); }
   location.reload(); // simplest reliable way to stop all timers/GPS watchers and reset to setup
 });
@@ -1315,7 +1333,9 @@ document.getElementById('endGameBtn').addEventListener('click', async () => {
 window.addEventListener('DOMContentLoaded', () => {
   const savedName = localStorage.getItem('cityTagName');
   const savedRole = localStorage.getItem('cityTagRole');
+  const savedEmoji = localStorage.getItem('cityTagEmoji');
   if(savedName) document.getElementById('nameInput').value = savedName;
+  if(savedEmoji) document.getElementById('emojiInput').value = savedEmoji;
   if(savedRole){
     myRole = savedRole;
     document.querySelectorAll('.role-btn').forEach(b => b.classList.toggle('active', b.dataset.role === savedRole));
@@ -1509,12 +1529,23 @@ function drawMe(){
   if(!myCurrentPos) return;
   const {lat, lng} = myCurrentPos;
   if(!meMarker){
-    const icon = L.divIcon({
-      className: '',
-      html: '<div class="me-marker-wrap"><div class="me-marker-ring"></div><div class="me-marker-dot"></div></div>',
-      iconSize: [20, 20],
-      iconAnchor: [10, 10]
-    });
+    const icon = myEmoji
+      ? L.divIcon({
+          className: '',
+          html: '<div class="me-marker-outer">'
+              + '<div class="me-marker-emoji-badge">' + escapeHtml(myEmoji) + '</div>'
+              + '<div class="me-marker-emoji-tail"></div>'
+              + '<div class="me-marker-wrap" style="position:absolute; bottom:0; left:10px;">'
+              + '<div class="me-marker-ring"></div><div class="me-marker-dot"></div></div></div>',
+          iconSize: [40, 56],
+          iconAnchor: [20, 46]
+        })
+      : L.divIcon({
+          className: '',
+          html: '<div class="me-marker-wrap"><div class="me-marker-ring"></div><div class="me-marker-dot"></div></div>',
+          iconSize: [20, 20],
+          iconAnchor: [10, 10]
+        });
     meMarker = L.marker([lat,lng], { icon }).addTo(map).bindPopup('<b>' + myName + '</b> (you)');
     map.setView([lat,lng], 16);
   } else {
@@ -1583,67 +1614,57 @@ async function pushMyLocation(){
     };
     if(myActivePower && myActivePower.expiresAt > Date.now()) payload.activePower = myActivePower;
     await db.ref('players/' + myId).set(payload);
-    // Ghost Trail decoys blip on the exact same cadence as the real player,
-    // so they never stand out by moving on a different schedule.
-    if(myActivePower && myActivePower.type === 'ghostTrail' && myActivePower.expiresAt > Date.now()) pushGhostDecoys();
+    // Decoys blip on the exact same cadence as the real player, so they
+    // never stand out by moving (or updating) on a different schedule.
+    if(myActivePower && myActivePower.expiresAt > Date.now()){
+      if(myActivePower.type === 'clone') pushCloneDecoys();
+      if(myActivePower.type === 'ghostTrail') pushGhostTrailDecoy();
+    }
   }catch(e){ console.error('push failed', e); }
 }
 
 /* ------------------------------------------------------------ */
-/* POWERUP: GHOST TRAIL — DECOY PUSH & CLEANUP */
+/* POWERUP: CLONE — MULTIPLE DECOYS THAT STICK NEAR YOU */
 /* ------------------------------------------------------------ */
-async function pushGhostDecoys(){
-  if(!myCurrentPos || !myActivePower || myActivePower.type !== 'ghostTrail') return;
-  const def = POWERUP_TYPES.ghostTrail;
+async function pushCloneDecoys(){
+  if(!myCurrentPos || !myActivePower || myActivePower.type !== 'clone') return;
+  const def = POWERUP_TYPES.clone;
   const now = Date.now();
-  for(let i = 0; i < def.ghostCount; i++){
-    const ghostId = 'ghost_' + myId + '_' + i;
+  for(let i = 0; i < def.cloneCount; i++){
+    const cloneId = 'ghost_' + myId + '_' + i;
     const [gLat, gLng] = offsetPointNear(myCurrentPos.lat, myCurrentPos.lng, 60, 260) || [myCurrentPos.lat, myCurrentPos.lng];
-    db.ref('players/' + ghostId).set({
+    db.ref('players/' + cloneId).set({
       name: myName, role: myRole, lat: gLat, lng: gLng, ts: now, isGhost: true
-    }).catch(e => console.error('ghost push failed', e));
+    }).catch(e => console.error('clone push failed', e));
   }
 }
 
-async function clearGhostDecoys(){
-  const def = POWERUP_TYPES.ghostTrail;
-  for(let i = 0; i < def.ghostCount; i++){
+async function clearCloneDecoys(){
+  const def = POWERUP_TYPES.clone;
+  for(let i = 0; i < def.cloneCount; i++){
     db.ref('players/ghost_' + myId + '_' + i).remove().catch(()=>{});
   }
 }
 
 /* ------------------------------------------------------------ */
-/* POWERUP: CLONE — SPAWNING, RENDERING & CLEANUP */
+/* POWERUP: GHOST TRAIL — SINGLE DECOY WALKING OFF ON ITS OWN BEARING */
 /* ------------------------------------------------------------ */
-async function refreshClones(){
-  try{
-    const snap = await db.ref('clones').once('value');
-    const all = snap.val() || {};
-    const now = Date.now();
-    const seen = new Set();
+async function pushGhostTrailDecoy(){
+  if(!ghostTrailState || !myActivePower || myActivePower.type !== 'ghostTrail') return;
+  const def = POWERUP_TYPES.ghostTrail;
+  const rad = ghostTrailState.bearingDeg * Math.PI / 180;
+  // Advance the decoy along its own fixed bearing each blip, completely
+  // independent of where the real player actually goes.
+  ghostTrailState.lat += (def.stepMeters * Math.cos(rad)) / 111320;
+  ghostTrailState.lng += (def.stepMeters * Math.sin(rad)) / (111320 * Math.cos(ghostTrailState.lat * Math.PI / 180));
+  db.ref('players/ghosttrail_' + myId).set({
+    name: myName, role: myRole, lat: ghostTrailState.lat, lng: ghostTrailState.lng, ts: Date.now(), isGhost: true
+  }).catch(e => console.error('ghost trail push failed', e));
+}
 
-    for(const [id, c] of Object.entries(all)){
-      if(!c || c.expiresAt < now){
-        db.ref('clones/' + id).remove(); // opportunistic cleanup
-        continue;
-      }
-      seen.add(id);
-      if(cloneMarkers[id]) continue; // clones are static, nothing to update
-
-      const iAmTagger = myRole === 'tagger';
-      const fillColor = iAmTagger ? (c.role === 'tagger' ? '#d1352f' : '#1f6fb2') : '#6b6f76';
-      const label = iAmTagger
-        ? '<b>' + escapeHtml(c.name) + '</b> (' + c.role + ')'
-        : '<b>' + escapeHtml(c.name) + '</b> (player)';
-      cloneMarkers[id] = L.circleMarker([c.lat, c.lng], {
-        pane: 'playersPane', radius: 8, color:'#fff', weight:2, fillColor, fillOpacity: 0.95
-      }).addTo(map).bindPopup(label);
-    }
-
-    Object.keys(cloneMarkers).forEach(id => {
-      if(!seen.has(id)){ map.removeLayer(cloneMarkers[id]); delete cloneMarkers[id]; }
-    });
-  }catch(e){ console.error('clone refresh failed', e); }
+async function clearGhostTrailDecoy(){
+  ghostTrailState = null;
+  db.ref('players/ghosttrail_' + myId).remove().catch(()=>{});
 }
 
 /* ------------------------------------------------------------ */
@@ -1808,7 +1829,7 @@ function updateLegendForRole(){
 /* GAMEPLAY — TAGGING A RUNNER */
 /* ------------------------------------------------------------ */
 async function tagPlayer(targetId){
-  if(targetId.startsWith('ghost_')) return; // Ghost Trail decoys aren't real players
+  if(targetId.startsWith('ghost')) return; // Clone/Ghost Trail decoys aren't real players
   try{
     await db.ref('players/' + targetId).update({ role: 'tagger' });
     db.ref('users/' + myId + '/stats/tagsMade').transaction(v => (v || 0) + 1);
@@ -2147,16 +2168,20 @@ async function collectPowerup(id){
       }
       updateActivePowerStatusHud();
       return; // no timed activePower — nothing further to do
-    } else if(def.isGhostTrail){
+    } else if(def.isClone){
       myActivePower = { type: p.type, activatedAt: now, expiresAt: now + def.duration };
       await db.ref('players/' + myId + '/activePower').set(myActivePower);
-      pushGhostDecoys(); // seed decoys immediately rather than waiting for next blip
-    } else if(def.isClone){
-      const [cLat, cLng] = offsetPointNear(myCurrentPos.lat, myCurrentPos.lng, 120, 320) || randomPointInBoundary();
-      await db.ref('clones').push({
-        name: myName, role: myRole, lat: cLat, lng: cLng,
-        createdAt: now, expiresAt: now + def.duration
-      });
+      pushCloneDecoys(); // seed decoys immediately rather than waiting for next blip
+    } else if(def.isGhostTrail){
+      // Peels off in one random direction and just keeps walking that way,
+      // independent of your real movement, for the duration.
+      ghostTrailState = {
+        lat: myCurrentPos.lat, lng: myCurrentPos.lng,
+        bearingDeg: Math.random() * 360
+      };
+      myActivePower = { type: p.type, activatedAt: now, expiresAt: now + def.duration };
+      await db.ref('players/' + myId + '/activePower').set(myActivePower);
+      pushGhostTrailDecoy(); // seed it immediately rather than waiting for next blip
     } else if(def.isHunt){
       // Lock onto whichever runner is nearest right now and keep polling
       // their entry directly (faster than the normal 5-minute blip refresh)
@@ -2255,7 +2280,8 @@ function updateActivePowerStatusHud(){
   const el = document.getElementById('activePowerStatus');
   if(!myActivePower || myActivePower.expiresAt <= Date.now()){
     if(myActivePower){ // just expired — clear it server-side too
-      if(myActivePower.type === 'ghostTrail') clearGhostDecoys();
+      if(myActivePower.type === 'clone') clearCloneDecoys();
+      if(myActivePower.type === 'ghostTrail') clearGhostTrailDecoy();
       if(myActivePower.type === 'hunt'){ huntTargetId = null; clearHuntMarker(); const hs = document.getElementById('huntStatus'); if(hs) hs.style.display = 'none'; }
       myActivePower = null;
       db.ref('players/' + myId + '/activePower').remove();
