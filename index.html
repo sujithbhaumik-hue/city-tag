@@ -193,7 +193,7 @@
   #googleSignInBtn:active{transform:translateY(0);}
   #accountRow{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
   #accountName{font-size:13px; font-weight:700; color:var(--text-lo);}
-  #signOutBtn, #statsBtn, #rulesBtn, #closeStatsBtn, #closeRulesBtn{
+  #signOutBtn, #statsBtn, #rulesBtn, #setupOptionsBtn, #closeStatsBtn, #closeRulesBtn{
     border:1.5px solid var(--dglass-border); background:rgba(255,255,255,.05);
     border-radius:999px; padding:7px 13px;
     font-size:12px; font-weight:700; color:var(--text-hi); cursor:pointer;
@@ -201,10 +201,28 @@
     outline:none;
   }
   #signOutBtn:hover, #closeStatsBtn:hover, #closeRulesBtn:hover{background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.35);}
-  #statsBtn:hover, #rulesBtn:hover{background:rgba(255,255,255,.1); border-color:rgba(242,169,0,.5);}
+  #statsBtn:hover, #rulesBtn:hover, #setupOptionsBtn:hover{background:rgba(255,255,255,.1); border-color:rgba(242,169,0,.5);}
   #rulesBody{color:var(--text-lo);}
   #rulesBody b{color:var(--text-hi);}
   #statsBtn, #rulesBtn{width:100%; margin-bottom:6px; font-weight:800;}
+  #setupOptionsBtn{width:100%; margin-bottom:0; font-weight:800;}
+  #setupOptionsPanel{
+    max-height:0; opacity:0; overflow:hidden;
+    transition:max-height .25s ease, opacity .2s ease;
+  }
+  #setupOptionsPanel.open{ max-height:120px; opacity:1; margin-top:10px; }
+  .options-row{
+    display:flex; align-items:center; justify-content:space-between;
+    background:rgba(255,255,255,.05); border:1px solid var(--dglass-border); border-radius:12px;
+    padding:9px 12px; font-size:13px; font-weight:700; color:var(--text-hi);
+  }
+  .toggle-switch{
+    border:1.5px solid var(--dglass-border); background:rgba(255,255,255,.06);
+    border-radius:999px; padding:4px 12px; font-size:11.5px; font-weight:800;
+    color:var(--text-lo); cursor:pointer; min-width:44px;
+  }
+  .toggle-switch:hover{background:rgba(255,255,255,.1);}
+  .toggle-switch.active{background:var(--tagger); color:#fff; border-color:var(--tagger);}
   #resetStatsBtn{
     width:100%; margin-top:10px; border:1.5px solid rgba(224,51,43,.4); background:rgba(224,51,43,.1); color:#ff9d92;
     border-radius:999px; padding:8px 11px; font-size:12px; font-weight:700; cursor:pointer;
@@ -276,14 +294,14 @@
     78%{opacity:1;}
     100%{opacity:0;}
   }
-  #hud, #legend, #globalCountdown, #recenterBtn, #styleSwitch{
+  #hud, #legend, #globalCountdown, #recenterBtn, #mapOptionsMenu{
     opacity:0; transition:opacity .6s ease;
   }
-  #hud.visible, #legend.visible, #globalCountdown.visible, #recenterBtn.visible, #styleSwitch.visible{
+  #hud.visible, #legend.visible, #globalCountdown.visible, #recenterBtn.visible, #mapOptionsMenu.visible{
     opacity:1;
   }
   body.low-power #setup, body.low-power #hud, body.low-power #legend,
-  body.low-power #globalCountdown, body.low-power #recenterBtn, body.low-power #styleSwitch,
+  body.low-power #globalCountdown, body.low-power #recenterBtn, body.low-power #mapOptionsMenu,
   body.low-power #transitionBlack{
     transition:none !important; animation:none !important;
   }
@@ -377,7 +395,7 @@
      transform is what matters both visually and for performance, since
      scale/translate on hover is what forces a repaint. In-game HUD panels
      use a solid dark background rather than backdrop-filter blur at all now
-     (see .panel/#legend/#styleSwitch/#globalCountdown/#recenterBtn) — blur
+     (see .panel/#legend/#mapOptionsMenu/#globalCountdown/#recenterBtn) — blur
      over a continuously-repainting live map caused real visual glitching on
      hover, not just a performance cost, so it's gone outright rather than
      just disabled here. */
@@ -402,14 +420,29 @@
   #recenterBtn:active{transform:scale(0.92);}
 
   /* ========================================================== */
-  /* IN-GAME HUD — MAP STYLE / TRAINS / LOW POWER SWITCHER
+  /* IN-GAME HUD — COLLAPSIBLE MAP OPTIONS MENU (style/trains/low power)
   /* ========================================================== */
-  #styleSwitch{
+  #mapOptionsMenu{
     position:fixed; bottom:14px; right:12px; z-index:1000;
-    display:flex; background:rgba(20,18,19,.78);
-    border:1px solid var(--dglass-border); border-radius:16px; padding:4px;
-    box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06); gap:3px;
+    display:flex; flex-direction:column; align-items:flex-end; gap:8px;
   }
+  #mapOptionsToggle{
+    width:38px; height:38px; border-radius:50%; border:1px solid var(--dglass-border);
+    background:rgba(20,18,19,.78); font-size:16px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  #mapOptionsToggle:hover{background:rgba(255,255,255,.1);}
+  #mapOptionsToggle.active{background:var(--tagger);}
+  #mapOptionsPanel{
+    display:flex; flex-direction:column; gap:6px;
+    background:rgba(20,18,19,.85); border:1px solid var(--dglass-border); border-radius:16px; padding:8px;
+    box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
+    max-height:0; opacity:0; overflow:hidden; pointer-events:none;
+    transition:max-height .25s ease, opacity .2s ease;
+  }
+  #mapOptionsPanel.open{ max-height:220px; opacity:1; pointer-events:auto; }
+  .map-options-row{display:flex; gap:3px;}
   .style-btn{
     border:none; background:transparent; padding:6px 11px; border-radius:12px;
     font-size:11.5px; font-weight:700; color:var(--text-lo); cursor:pointer;
@@ -475,14 +508,14 @@
   .me-marker-outer{ position:relative; width:40px; height:56px; }
   .me-marker-emoji-badge{
     position:absolute; top:0; left:7px; width:26px; height:26px; border-radius:50%;
-    background:rgba(20,18,19,.88); border:2px solid var(--amber);
+    background:#f4f2ec; border:2px solid #7d93ab;
     display:flex; align-items:center; justify-content:center;
     font-size:15px; line-height:1; box-shadow:0 2px 6px rgba(0,0,0,.4);
   }
   .me-marker-emoji-tail{
     position:absolute; top:24px; left:14px; width:0; height:0;
     border-left:6px solid transparent; border-right:6px solid transparent;
-    border-top:7px solid var(--amber);
+    border-top:7px solid #7d93ab;
   }
   body.low-power .me-marker-emoji-badge{ box-shadow:none; }
 
@@ -694,12 +727,20 @@
       </div>
       <button id="statsBtn" type="button">📊 My stats</button>
       <button id="rulesBtn" type="button">📖 Powers &amp; Rules</button>
+      <button id="setupOptionsBtn" type="button" onclick="toggleSetupOptionsMenu()">⚙️ Options</button>
+      <div id="setupOptionsPanel">
+        <div class="options-row">
+          <span>Low power mode</span>
+          <button id="setupLowPowerToggle" class="toggle-switch" type="button" onclick="toggleLowPower()">Off</button>
+        </div>
+        <p class="sub" style="margin:6px 0 0; text-transform:none; font-weight:500; letter-spacing:0; font-size:12px;">Turns off background animations and effects — handy on older phones or to save battery.</p>
+      </div>
 
       <label for="nameInput">Your name</label>
       <input id="nameInput" type="text" placeholder="e.g. Jess" maxlength="20" autocomplete="off">
 
       <label for="emojiInput">Marker emoji (optional)</label>
-      <input id="emojiInput" type="text" placeholder="📍" maxlength="4" autocomplete="off">
+      <input id="emojiInput" type="text" placeholder="📍" maxlength="8" autocomplete="off">
 
       <label>Pick a side</label>
       <div class="role-toggle">
@@ -809,11 +850,16 @@
 
 <button id="recenterBtn" style="display:none;" type="button" onclick="recenterOnMe()" title="Find me" aria-label="Recenter on my location">📍</button>
 
-<div id="styleSwitch" style="display:none;">
-  <button class="style-btn active" data-style="clean" type="button" onclick="setMapStyle('clean')">Clean</button>
-  <button class="style-btn" data-style="standard" type="button" onclick="setMapStyle('standard')">Standard</button>
-  <button class="style-btn" id="trainToggleBtn" type="button" onclick="toggleTrainLines()">🚆 Trains</button>
-  <button class="style-btn" id="lowPowerBtn" type="button" onclick="toggleLowPower()">⚡ Low power</button>
+<div id="mapOptionsMenu" style="display:none;">
+  <div id="mapOptionsPanel">
+    <div class="map-options-row">
+      <button class="style-btn active" data-style="clean" type="button" onclick="setMapStyle('clean')">Clean</button>
+      <button class="style-btn" data-style="standard" type="button" onclick="setMapStyle('standard')">Standard</button>
+    </div>
+    <button class="style-btn" id="trainToggleBtn" type="button" onclick="toggleTrainLines()">🚆 Trains</button>
+    <button class="style-btn" id="lowPowerBtn" type="button" onclick="toggleLowPower()">⚡ Low power</button>
+  </div>
+  <button id="mapOptionsToggle" type="button" onclick="toggleMapOptionsMenu()" title="Map options" aria-label="Map options">⚙️</button>
 </div>
 
 
@@ -1213,6 +1259,30 @@ document.querySelectorAll('.role-btn').forEach(btn => {
 document.getElementById('startBtn').addEventListener('click', startGame);
 
 /* ------------------------------------------------------------ */
+/* SETUP SCREEN — RESTRICT MARKER EMOJI TO A SINGLE GRAPHEME */
+/* ------------------------------------------------------------ */
+(function(){
+  const segmenter = (typeof Intl !== 'undefined' && Intl.Segmenter)
+    ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+    : null;
+  function firstGrapheme(str){
+    if(!str) return '';
+    if(segmenter){
+      const it = segmenter.segment(str)[Symbol.iterator]().next();
+      return it.done ? '' : it.value.segment;
+    }
+    // Fallback for browsers without Intl.Segmenter: Array.from at least
+    // keeps surrogate-pair emoji intact, just not multi-codepoint ZWJ ones.
+    return Array.from(str)[0] || '';
+  }
+  const emojiField = document.getElementById('emojiInput');
+  emojiField.addEventListener('input', () => {
+    emojiField.value = firstGrapheme(emojiField.value);
+  });
+})();
+
+
+/* ------------------------------------------------------------ */
 /* GAME LIFECYCLE — START GAME */
 /* ------------------------------------------------------------ */
 function startGame(){
@@ -1257,15 +1327,15 @@ function startGame(){
   const legendEl = document.getElementById('legend');
   const countdownEl = document.getElementById('globalCountdown');
   const recenterEl = document.getElementById('recenterBtn');
-  const styleSwitchEl = document.getElementById('styleSwitch');
+  const mapOptionsMenuEl = document.getElementById('mapOptionsMenu');
   const revealHud = () => {
     hudEl.style.display = 'flex';
     legendEl.style.display = 'block';
     countdownEl.style.display = 'flex';
     recenterEl.style.display = 'flex';
-    styleSwitchEl.style.display = 'flex';
+    mapOptionsMenuEl.style.display = 'flex';
     requestAnimationFrame(() => {
-      [hudEl, legendEl, countdownEl, recenterEl, styleSwitchEl].forEach(el => el.classList.add('visible'));
+      [hudEl, legendEl, countdownEl, recenterEl, mapOptionsMenuEl].forEach(el => el.classList.add('visible'));
     });
   };
 
@@ -1343,6 +1413,8 @@ window.addEventListener('DOMContentLoaded', () => {
   if(localStorage.getItem('cityTagLowPower') === '1'){
     document.body.classList.add('low-power');
     document.getElementById('lowPowerBtn').classList.add('active');
+    const setupBtn = document.getElementById('setupLowPowerToggle');
+    if(setupBtn){ setupBtn.classList.add('active'); setupBtn.textContent = 'On'; }
   }
 });
 
@@ -1486,10 +1558,43 @@ function initMap(){
 /* UI — LOW POWER MODE TOGGLE */
 /* ------------------------------------------------------------ */
 function toggleLowPower(){
-  const btn = document.getElementById('lowPowerBtn');
   const on = document.body.classList.toggle('low-power');
-  btn.classList.toggle('active', on);
   localStorage.setItem('cityTagLowPower', on ? '1' : '0');
+  // Keep the in-game toggle and the homepage toggle in sync regardless of
+  // which one triggered the change (or if it was restored from localStorage
+  // before either existed on screen yet).
+  const gameBtn = document.getElementById('lowPowerBtn');
+  if(gameBtn) gameBtn.classList.toggle('active', on);
+  const setupBtn = document.getElementById('setupLowPowerToggle');
+  if(setupBtn){
+    setupBtn.classList.toggle('active', on);
+    setupBtn.textContent = on ? 'On' : 'Off';
+  }
+}
+
+/* ------------------------------------------------------------ */
+/* UI — COLLAPSIBLE MAP OPTIONS MENU */
+/* ------------------------------------------------------------ */
+function toggleMapOptionsMenu(){
+  const panel = document.getElementById('mapOptionsPanel');
+  const btn = document.getElementById('mapOptionsToggle');
+  const open = panel.classList.toggle('open');
+  btn.classList.toggle('active', open);
+}
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('mapOptionsMenu');
+  if(!menu || menu.style.display === 'none') return;
+  if(!menu.contains(e.target)){
+    document.getElementById('mapOptionsPanel').classList.remove('open');
+    document.getElementById('mapOptionsToggle').classList.remove('active');
+  }
+});
+
+/* ------------------------------------------------------------ */
+/* UI — COLLAPSIBLE HOMEPAGE OPTIONS MENU */
+/* ------------------------------------------------------------ */
+function toggleSetupOptionsMenu(){
+  document.getElementById('setupOptionsPanel').classList.toggle('open');
 }
 
 /* ------------------------------------------------------------ */
