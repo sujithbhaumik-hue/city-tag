@@ -174,7 +174,6 @@
     transition:transform .15s, box-shadow .15s;
     outline:none;
   }
-  #startBtn:hover{box-shadow:0 0 30px rgba(224,51,43,.55);}
   #startBtn:active{transform:translateY(0); box-shadow:0 0 14px rgba(224,51,43,.35);}
   #startBtn:disabled{opacity:.4; cursor:not-allowed;}
   #setupError{color:#ff7a70; font-size:12.5px; margin-top:10px; min-height:14px; font-weight:700;}
@@ -244,17 +243,17 @@
   /* IN-GAME HUD — MAP & LAYOUT SHELL
   /* ========================================================== */
   #map{position:fixed; inset:0;}
-  /* Entering the game: setup zooms down toward the bottom of the screen
-     while fading out, a black flash bridges the cut, and the HUD/legend/
-     countdown/recenter/style switch fade in as the black clears — instead
+  /* Entering the game: the setup screen zooms in toward the Start button
+     (transform-origin set at runtime to the button's actual position) while
+     fading to black, then the black clears to reveal the map/HUD — instead
      of the previous instant display swap. */
-  #setup{ transform-origin:50% 100%; transition:opacity .35s ease; }
-  #setup.zoom-out{
-    animation:setup-zoom-out .5s cubic-bezier(.4,0,.7,1) forwards;
+  #setup{ transition:opacity .35s ease; }
+  #setup.zoom-in{
+    animation:setup-zoom-in .55s cubic-bezier(.55,0,.85,.35) forwards;
   }
-  @keyframes setup-zoom-out{
-    0%{ transform:scale(1) translateY(0); opacity:1; }
-    100%{ transform:scale(.8) translateY(70px); opacity:0; }
+  @keyframes setup-zoom-in{
+    0%{ transform:scale(1); opacity:1; }
+    100%{ transform:scale(16); opacity:0; }
   }
   #transitionBlack{
     position:fixed; inset:0; z-index:1900; background:#000;
@@ -377,21 +376,6 @@
   /* ========================================================== */
   body.low-power *{ animation:none !important; transition:none !important; }
   body.low-power .me-marker-ring{ display:none !important; }
-  body.low-power .role-btn:hover,
-  body.low-power #startBtn:hover,
-  body.low-power #googleSignInBtn:hover,
-  body.low-power #signOutBtn:hover,
-  body.low-power #closeStatsBtn:hover,
-  body.low-power #closeRulesBtn:hover,
-  body.low-power #statsBtn:hover,
-  body.low-power #rulesBtn:hover,
-  body.low-power #resetStatsBtn:hover,
-  body.low-power #endGameBtn:hover,
-  body.low-power .style-btn:hover,
-  body.low-power .tag-btn:hover,
-  body.low-power #recenterBtn:hover{
-    transform:none !important;
-  }
 
   /* ========================================================== */
   /* IN-GAME HUD — RECENTER BUTTON
@@ -586,15 +570,6 @@
   #setup .card{
     transition:transform .25s ease, box-shadow .25s ease;
   }
-  /* NOTE: no transform here — this codebase has a documented history of
-     translateY-on-:hover causing a hover feedback loop (the element shifts
-     under a stationary cursor, which can flip :hover on/off every frame).
-     A static border/shadow lift gives the same "lifted" feel with zero
-     layout movement, so it can never retrigger that bug. */
-  #setup .card:hover{
-    box-shadow:0 28px 78px rgba(0,0,0,.68), inset 0 1px 0 rgba(255,255,255,.08);
-    border-color:rgba(255,255,255,.16);
-  }
 
   /* Role cards get a satisfying selection response. */
   .role-btn.active{
@@ -604,16 +579,6 @@
     0%{transform:scale(1);}
     45%{transform:scale(1.035);}
     100%{transform:scale(1);}
-  }
-
-  /* Icon nudge makes the controls feel more game-like on interaction. */
-  .role-btn:hover .role-icon{
-    animation:icon-bob .35s ease-out;
-  }
-  @keyframes icon-bob{
-    0%{transform:translateY(0) rotate(0);}
-    45%{transform:translateY(-3px) rotate(-4deg);}
-    100%{transform:translateY(0) rotate(0);}
   }
 
   /* Inputs feel responsive without changing their behaviour. */
@@ -647,28 +612,10 @@
   .stat-card{
     transition:transform .18s ease, border-color .18s ease, background .18s ease;
   }
-  /* No transform on hover — see note above #setup .card:hover for why. */
-  .stat-card:hover{
-    border-color:rgba(242,169,0,.45);
-    background:rgba(255,255,255,.075);
-  }
-  .stat-card:hover .stat-icon{
-    animation:stat-icon-pop .35s cubic-bezier(.2,1.35,.45,1);
-  }
-  @keyframes stat-icon-pop{
-    0%{transform:scale(1) rotate(0);}
-    45%{transform:scale(1.2) rotate(-7deg);}
-    100%{transform:scale(1) rotate(0);}
-  }
 
   /* Power entries have a subtle hazard-panel lift. */
   .power-entry{
     transition:transform .18s ease, border-color .18s ease, background .18s ease;
-  }
-  /* No transform on hover — see note above #setup .card:hover for why. */
-  .power-entry:hover{
-    border-color:rgba(242,169,0,.4);
-    background:rgba(255,255,255,.075);
   }
 
   /* Animated emphasis for the live countdown when it updates. */
@@ -684,11 +631,8 @@
   /* Respect the existing Low Power mode completely. */
   body.low-power .ui-click-pop,
   body.low-power .ui-ripple,
-  body.low-power #setup .card:hover,
   body.low-power .role-btn.active,
-  body.low-power .role-btn:hover .role-icon,
   body.low-power input[type=text]:focus,
-  body.low-power .stat-card:hover .stat-icon,
   body.low-power #globalCountdown.ui-countdown-tick{
     animation:none !important;
     transform:none !important;
@@ -1299,12 +1243,17 @@ function startGame(){
     setupEl.style.display = 'none';
     revealHud();
   } else {
-    // Setup zooms down toward the bottom of the screen and fades out; a
-    // black flash bridges the cut; the HUD fades in as the black clears.
-    setupEl.classList.add('zoom-out');
+    // Zoom in toward wherever the Start button actually is on screen, fading
+    // to black as it grows; a black flash bridges the cut; the HUD fades in
+    // as the black clears.
+    const btnRect = document.getElementById('startBtn').getBoundingClientRect();
+    const originX = btnRect.left + btnRect.width / 2;
+    const originY = btnRect.top + btnRect.height / 2;
+    setupEl.style.transformOrigin = originX + 'px ' + originY + 'px';
+    setupEl.classList.add('zoom-in');
     blackEl.classList.add('playing');
-    setTimeout(revealHud, 350);              // HUD starts fading in as black nears its peak
-    setTimeout(() => { setupEl.style.display = 'none'; }, 500);
+    setTimeout(revealHud, 400);              // HUD starts fading in as black nears its peak
+    setTimeout(() => { setupEl.style.display = 'none'; }, 550);
     setTimeout(() => { blackEl.classList.remove('playing'); blackEl.style.display = 'none'; }, 900);
   }
 
