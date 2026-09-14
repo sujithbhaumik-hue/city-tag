@@ -156,6 +156,7 @@
   }
   .role-btn .role-icon{font-size:26px; line-height:1;}
   .role-btn small{font-weight:600; font-size:11px; color:var(--text-lo);}
+  .role-btn:hover{background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.3);}
   .role-btn:active{transform:translateY(0);}
   .role-btn.active[data-role="tagger"]{border-color:var(--tagger); background:rgba(224,51,43,.16); color:#ff9d92; box-shadow:0 0 16px rgba(224,51,43,.35);}
   .role-btn.active[data-role="runner"]{border-color:var(--runner); background:rgba(34,119,196,.18); color:#8fc4ef; box-shadow:0 0 16px rgba(34,119,196,.35);}
@@ -174,6 +175,7 @@
     transition:transform .15s, box-shadow .15s;
     outline:none;
   }
+  #startBtn:hover{box-shadow:0 0 30px rgba(224,51,43,.55);}
   #startBtn:active{transform:translateY(0); box-shadow:0 0 14px rgba(224,51,43,.35);}
   #startBtn:disabled{opacity:.4; cursor:not-allowed;}
   #setupError{color:#ff7a70; font-size:12.5px; margin-top:10px; min-height:14px; font-weight:700;}
@@ -187,6 +189,7 @@
     transition:transform .15s, border-color .15s;
     outline:none;
   }
+  #googleSignInBtn:hover{background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.35);}
   #googleSignInBtn:active{transform:translateY(0);}
   #accountRow{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
   #accountName{font-size:13px; font-weight:700; color:var(--text-lo);}
@@ -197,6 +200,8 @@
     transition:transform .15s, border-color .15s;
     outline:none;
   }
+  #signOutBtn:hover, #closeStatsBtn:hover, #closeRulesBtn:hover{background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.35);}
+  #statsBtn:hover, #rulesBtn:hover{background:rgba(255,255,255,.1); border-color:rgba(242,169,0,.5);}
   #rulesBody{color:var(--text-lo);}
   #rulesBody b{color:var(--text-hi);}
   #statsBtn, #rulesBtn{width:100%; margin-bottom:6px; font-weight:800;}
@@ -206,6 +211,7 @@
     transition:transform .15s, border-color .15s;
     outline:none;
   }
+  #resetStatsBtn:hover{background:rgba(224,51,43,.18); border-color:rgba(224,51,43,.8);}
   #closeStatsBtn, #closeRulesBtn{width:100%; margin-top:10px;}
   /* ========================================================== */
   /* STATS & RULES MODALS
@@ -245,15 +251,16 @@
   #map{position:fixed; inset:0;}
   /* Entering the game: the setup screen zooms in toward the Start button
      (transform-origin set at runtime to the button's actual position) while
-     fading to black, then the black clears to reveal the map/HUD — instead
-     of the previous instant display swap. */
+     fading to black in the same motion, holds on black briefly, then clears
+     to reveal the map/HUD — instead of the previous instant display swap. */
   #setup{ transition:opacity .35s ease; }
   #setup.zoom-in{
-    animation:setup-zoom-in .55s cubic-bezier(.55,0,.85,.35) forwards;
+    animation:setup-zoom-in 1.1s cubic-bezier(.6,.04,.9,.4) forwards;
   }
   @keyframes setup-zoom-in{
     0%{ transform:scale(1); opacity:1; }
-    100%{ transform:scale(16); opacity:0; }
+    60%{ opacity:1; }
+    100%{ transform:scale(4.5); opacity:0; }
   }
   #transitionBlack{
     position:fixed; inset:0; z-index:1900; background:#000;
@@ -261,15 +268,16 @@
   }
   #transitionBlack.playing{
     display:block;
-    animation:transition-flash .9s ease-in-out forwards;
+    animation:transition-flash 1.7s ease-in-out forwards;
   }
   @keyframes transition-flash{
     0%{opacity:0;}
-    45%{opacity:1;}
+    60%{opacity:1;}
+    75%{opacity:1;}
     100%{opacity:0;}
   }
   #hud, #legend, #globalCountdown, #recenterBtn, #styleSwitch{
-    opacity:0; transition:opacity .5s ease;
+    opacity:0; transition:opacity .6s ease;
   }
   #hud.visible, #legend.visible, #globalCountdown.visible, #recenterBtn.visible, #styleSwitch.visible{
     opacity:1;
@@ -315,6 +323,7 @@
     color:var(--ink); font-weight:800; font-size:12px; cursor:pointer;
     text-transform:uppercase; letter-spacing:.3px; box-shadow:0 3px 0 var(--ink);
   }
+  .powerup-popup .collect-btn:hover{background:#ffcf4d;}
   #boundsStatus.in{color:#5fd97a;}
   #boundsStatus.out{color:#ff9d92;}
   /* ========================================================== */
@@ -341,6 +350,7 @@
     transition:transform .15s, background .15s, color .15s, border-color .15s;
     outline:none;
   }
+  #endGameBtn:hover{background:rgba(224,51,43,.15); color:#ff9d92; border-color:rgba(224,51,43,.4);}
   #endGameBtn:active{transform:translateY(1px);}
 
   /* ========================================================== */
@@ -406,6 +416,8 @@
     transition:background .15s, color .15s;
   }
   .style-btn.active{background:var(--tagger); color:#fff;}
+  .style-btn:hover{background:rgba(255,255,255,.1); color:var(--text-hi);}
+  .style-btn.active:hover{background:var(--tagger);}
 
   /* ========================================================== */
   /* MAP MARKERS & POPUPS — SHARED STYLES + TAG BUTTON
@@ -418,6 +430,7 @@
     text-transform:uppercase; letter-spacing:.3px;
     box-shadow:2px 2px 0 var(--ink); transition:transform .15s, box-shadow .15s;
   }
+  .tag-btn:hover{background:var(--tagger-dark); box-shadow:4px 5px 0 var(--ink);}
   .tag-btn:active{background:var(--tagger-dark); transform:translate(2px,2px); box-shadow:0 0 0 var(--ink);}
   /* ========================================================== */
   /* MAP MARKERS & POPUPS — TRAIN STATIONS & TRACK TOOLTIPS
@@ -583,11 +596,10 @@
 
   /* Inputs feel responsive without changing their behaviour. */
   input[type=text]{
-    transition:border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease;
+    transition:border-color .18s ease, background .18s ease, box-shadow .18s ease;
   }
   input[type=text]:focus{
-    transform:translateY(-1px);
-    box-shadow:0 0 0 3px rgba(224,51,43,.12), 0 8px 24px rgba(0,0,0,.18);
+    box-shadow:0 0 0 3px rgba(224,51,43,.12);
   }
 
   /* Stats/rules cards enter with a small HUD-style deployment animation. */
@@ -735,8 +747,8 @@
         <p>Permanently locks onto one random other player and shows you their true role forever, even after this game ends — no timer on this one.</p>
       </div>
       <div class="power-entry">
-        <b>👻 Ghost Trail</b> <span style="opacity:.6; font-weight:600;">— runners only</span>
-        <p>Spawns a few decoy dots near you that blip on your same schedule. Taggers see them exactly like a real runner — they can't tell which dot is really you.</p>
+        <b>👻 Ghost Trail</b>
+        <p>Spawns a few decoy dots near you that blip on your same schedule. They show up exactly like you would — no one else can tell which dot is really you.</p>
       </div>
       <div class="power-entry">
         <b>🫂 Clone</b>
@@ -1027,8 +1039,8 @@ const POWERUP_TYPES = {
     blurb: "Your whole team goes live-tracking for each other — no more waiting on blips." },
   reveal: { label: 'Reveal', icon: '🔍', runnerOnly: true, isReveal: true,
     blurb: "Runner-only. Permanently reveals one random player's true role to you, no matter who else moves or gets tagged." },
-  ghostTrail: { label: 'Ghost Trail', icon: '👻', runnerOnly: true, duration: 6 * 60 * 1000, isGhostTrail: true, ghostCount: 3,
-    blurb: "Runner-only. Spawns decoy dots near you for a while — taggers can't tell your real blip from the fakes." },
+  ghostTrail: { label: 'Ghost Trail', icon: '👻', duration: 6 * 60 * 1000, isGhostTrail: true, ghostCount: 3,
+    blurb: "Spawns decoy dots near you for a while, blipping on your same schedule — no one else can tell your real dot from the fakes." },
   clone: { label: 'Clone', icon: '🫂', duration: 6 * 60 * 1000, isClone: true,
     blurb: "Drops a static decoy of you elsewhere on the grid — it shows up on maps exactly like you would." },
   hunt: { label: 'Hunt', icon: '🧭', taggerOnly: true, duration: 3 * 60 * 1000, isHunt: true,
@@ -1252,9 +1264,9 @@ function startGame(){
     setupEl.style.transformOrigin = originX + 'px ' + originY + 'px';
     setupEl.classList.add('zoom-in');
     blackEl.classList.add('playing');
-    setTimeout(revealHud, 400);              // HUD starts fading in as black nears its peak
-    setTimeout(() => { setupEl.style.display = 'none'; }, 550);
-    setTimeout(() => { blackEl.classList.remove('playing'); blackEl.style.display = 'none'; }, 900);
+    setTimeout(revealHud, 1200);              // HUD starts fading in just before black begins clearing
+    setTimeout(() => { setupEl.style.display = 'none'; }, 1100);
+    setTimeout(() => { blackEl.classList.remove('playing'); blackEl.style.display = 'none'; }, 1700);
   }
 
   document.getElementById('meName').textContent = myName;
@@ -1588,7 +1600,7 @@ async function pushGhostDecoys(){
     const ghostId = 'ghost_' + myId + '_' + i;
     const [gLat, gLng] = offsetPointNear(myCurrentPos.lat, myCurrentPos.lng, 60, 260) || [myCurrentPos.lat, myCurrentPos.lng];
     db.ref('players/' + ghostId).set({
-      name: myName, role: 'runner', lat: gLat, lng: gLng, ts: now, isGhost: true
+      name: myName, role: myRole, lat: gLat, lng: gLng, ts: now, isGhost: true
     }).catch(e => console.error('ghost push failed', e));
   }
 }
@@ -2100,9 +2112,9 @@ async function collectPowerup(id){
   const def = POWERUP_TYPES[p.type];
   const now = Date.now();
 
-  // Role-locked powers (Reveal/Ghost Trail/Antidote are runner-only, Hunt is
-  // tagger-only) shouldn't be collectible by the wrong side. The Collect
-  // button is already hidden for these in the popup — this is just a
+  // Role-locked powers (Reveal is runner-only; Sabotage, Train Sabotage, and
+  // Hunt are tagger-only) shouldn't be collectible by the wrong side. The
+  // Collect button is already hidden for these in the popup — this is just a
   // defensive backstop in case collectPowerup gets called some other way.
   if((def.runnerOnly && myRole !== 'runner') || (def.taggerOnly && myRole !== 'tagger')) return;
 
