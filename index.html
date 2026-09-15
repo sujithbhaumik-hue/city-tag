@@ -39,6 +39,12 @@
     --dglass-border:rgba(255,255,255,.1);
     --text-hi:#f4f1ec;
     --text-lo:#a8a29a;
+    --glass-hud-bg:rgba(20,18,19,.38);
+    /* User-customizable identifier colors — overridden at runtime (and
+       persisted to localStorage) via the homepage Options panel. */
+    --my-marker-color:#f2a900;
+    --my-emoji-ring-color:#3d5a78;
+    --my-powerup-color:#1f4066;
   }
   /* ========================================================== */
   /* GLOBAL RESET & BASE
@@ -210,11 +216,16 @@
     max-height:0; opacity:0; overflow:hidden;
     transition:max-height .25s ease, opacity .2s ease;
   }
-  #setupOptionsPanel.open{ max-height:120px; opacity:1; margin-top:10px; }
+  #setupOptionsPanel.open{ max-height:320px; opacity:1; margin-top:10px; }
   .options-row{
     display:flex; align-items:center; justify-content:space-between;
     background:rgba(255,255,255,.05); border:1px solid var(--dglass-border); border-radius:12px;
     padding:9px 12px; font-size:13px; font-weight:700; color:var(--text-hi);
+    margin-bottom:8px;
+  }
+  .options-row input[type=color]{
+    width:34px; height:26px; padding:0; border:1.5px solid var(--dglass-border);
+    border-radius:8px; background:none; cursor:pointer;
   }
   .toggle-switch{
     border:1.5px solid var(--dglass-border); background:rgba(255,255,255,.06);
@@ -311,7 +322,7 @@
     gap:10px; pointer-events:none;
   }
   .panel{
-    background:rgba(20,18,19,.78);
+    background:var(--glass-hud-bg);
     border-radius:16px; padding:10px 14px;
     border:1px solid var(--dglass-border);
     box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06); pointer-events:auto;
@@ -349,7 +360,7 @@
   /* ========================================================== */
   #globalCountdown{
     position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:1001;
-    background:rgba(20,18,19,.78);
+    background:var(--glass-hud-bg);
     color:var(--text-hi); padding:7px 16px; border-radius:20px; border:1px solid rgba(242,169,0,.4);
     font-size:12.5px; font-weight:700; display:flex; align-items:center; gap:6px;
     box-shadow:0 8px 24px rgba(0,0,0,.4); pointer-events:none;
@@ -376,7 +387,7 @@
   /* ========================================================== */
   #legend{
     position:fixed; bottom:14px; left:12px; z-index:1000;
-    background:rgba(20,18,19,.78);
+    background:var(--glass-hud-bg);
     border:1px solid var(--dglass-border); border-radius:16px; padding:8px 12px;
     font-size:11.5px; color:var(--text-hi);
     box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
@@ -411,7 +422,7 @@
   #recenterBtn{
     position:fixed; bottom:64px; right:12px; z-index:1000;
     width:38px; height:38px; border-radius:50%; border:1px solid var(--dglass-border);
-    background:rgba(20,18,19,.78);
+    background:var(--glass-hud-bg);
     font-size:17px; cursor:pointer;
     box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
     display:flex; align-items:center; justify-content:center;
@@ -424,26 +435,34 @@
   /* ========================================================== */
   #mapOptionsMenu{
     position:fixed; bottom:14px; right:12px; z-index:1000;
-    display:flex; flex-direction:column; align-items:flex-end; gap:8px;
+    display:flex; flex-direction:row-reverse; align-items:center; gap:8px;
   }
   #mapOptionsToggle{
+    flex:none;
     width:38px; height:38px; border-radius:50%; border:1px solid var(--dglass-border);
-    background:rgba(20,18,19,.78); font-size:16px; cursor:pointer;
+    background:var(--glass-hud-bg); font-size:16px; cursor:pointer;
     display:flex; align-items:center; justify-content:center;
     box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
   }
   #mapOptionsToggle:hover{background:rgba(255,255,255,.1);}
   #mapOptionsToggle.active{background:var(--tagger);}
+  /* A single scrollable line of options (not a dropdown) that slides out to
+     the left of the gear button — "|" separators between option groups,
+     and horizontal scroll if it doesn't all fit. */
   #mapOptionsPanel{
-    display:flex; flex-direction:column; gap:6px;
-    background:rgba(20,18,19,.85); border:1px solid var(--dglass-border); border-radius:16px; padding:8px;
+    display:flex; align-items:center; gap:2px; white-space:nowrap;
+    background:var(--glass-hud-bg); border:1px solid var(--dglass-border); border-radius:16px;
     box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
-    max-height:0; opacity:0; overflow:hidden; pointer-events:none;
-    transition:max-height .25s ease, opacity .2s ease;
+    max-width:0; opacity:0; overflow:hidden; pointer-events:none; padding:0;
+    transition:max-width .25s ease, opacity .2s ease, padding .25s ease;
   }
-  #mapOptionsPanel.open{ max-height:220px; opacity:1; pointer-events:auto; }
-  .map-options-row{display:flex; gap:3px;}
+  #mapOptionsPanel.open{
+    max-width:min(70vw, 420px); opacity:1; pointer-events:auto; padding:4px 6px;
+    overflow-x:auto;
+  }
+  .map-options-sep{ color:var(--text-lo); opacity:.5; font-size:12px; padding:0 2px; user-select:none; flex:none;}
   .style-btn{
+    flex:none;
     border:none; background:transparent; padding:6px 11px; border-radius:12px;
     font-size:11.5px; font-weight:700; color:var(--text-lo); cursor:pointer;
     transition:background .15s, color .15s;
@@ -490,10 +509,10 @@
   .me-marker-wrap{ position:relative; width:20px; height:20px; }
   .me-marker-dot{
     position:absolute; top:6px; left:6px; width:8px; height:8px; border-radius:50%;
-    background:var(--amber); border:2px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.3);
+    background:var(--my-marker-color); border:2px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.3);
   }
   .me-marker-ring{
-    position:absolute; inset:0; border-radius:50%; border:2px solid var(--amber);
+    position:absolute; inset:0; border-radius:50%; border:2px solid var(--my-marker-color);
     animation:radar-pulse 2.2s ease-out infinite;
   }
   @keyframes radar-pulse{
@@ -508,14 +527,14 @@
   .me-marker-outer{ position:relative; width:40px; height:56px; }
   .me-marker-emoji-badge{
     position:absolute; top:0; left:7px; width:26px; height:26px; border-radius:50%;
-    background:#f4f2ec; border:2px solid #7d93ab;
+    background:#ffffff; border:2px solid var(--my-emoji-ring-color); color:var(--ink);
     display:flex; align-items:center; justify-content:center;
     font-size:15px; line-height:1; box-shadow:0 2px 6px rgba(0,0,0,.4);
   }
   .me-marker-emoji-tail{
     position:absolute; top:24px; left:14px; width:0; height:0;
     border-left:6px solid transparent; border-right:6px solid transparent;
-    border-top:7px solid #7d93ab;
+    border-top:7px solid var(--my-emoji-ring-color);
   }
   body.low-power .me-marker-emoji-badge{ box-shadow:none; }
 
@@ -526,11 +545,11 @@
   .powerup-marker-wrap{ position:relative; width:26px; height:26px; }
   .powerup-marker-dot{
     position:absolute; top:5px; left:5px; width:16px; height:16px; border-radius:50%;
-    background:#fff; border:2px solid var(--amber); display:flex; align-items:center;
+    background:#ffffff; border:2px solid var(--my-powerup-color); display:flex; align-items:center;
     justify-content:center; font-size:11px; box-shadow:0 1px 4px rgba(0,0,0,.35);
   }
   .powerup-marker-glow{
-    position:absolute; inset:0; border-radius:50%; background:var(--amber);
+    position:absolute; inset:0; border-radius:50%; background:var(--my-powerup-color);
     opacity:.35; animation:powerup-glow 1.6s ease-in-out infinite;
   }
   @keyframes powerup-glow{
@@ -731,7 +750,19 @@
           <span>Low power mode</span>
           <button id="setupLowPowerToggle" class="toggle-switch" type="button" onclick="toggleLowPower()">Off</button>
         </div>
-        <p class="sub" style="margin:6px 0 0; text-transform:none; font-weight:500; letter-spacing:0; font-size:12px;">Turns off background animations and effects — handy on older phones or to save battery.</p>
+        <p class="sub" style="margin:6px 0 10px; text-transform:none; font-weight:500; letter-spacing:0; font-size:12px;">Turns off background animations and effects — handy on older phones or to save battery.</p>
+        <div class="options-row">
+          <span>My marker color</span>
+          <input type="color" id="markerColorInput" value="#f2a900" onchange="updateColorPref('markerColorInput','--my-marker-color','cityTagMarkerColor')">
+        </div>
+        <div class="options-row">
+          <span>Emoji ring color</span>
+          <input type="color" id="emojiColorInput" value="#3d5a78" onchange="updateColorPref('emojiColorInput','--my-emoji-ring-color','cityTagEmojiColor')">
+        </div>
+        <div class="options-row">
+          <span>Powerup marker color</span>
+          <input type="color" id="powerupColorInput" value="#1f4066" onchange="updateColorPref('powerupColorInput','--my-powerup-color','cityTagPowerupColor')">
+        </div>
       </div>
 
       <label for="nameInput">Your name</label>
@@ -849,15 +880,15 @@
 <button id="recenterBtn" style="display:none;" type="button" onclick="recenterOnMe()" title="Find me" aria-label="Recenter on my location">📍</button>
 
 <div id="mapOptionsMenu" style="display:none;">
+  <button id="mapOptionsToggle" type="button" onclick="toggleMapOptionsMenu()" title="Map options" aria-label="Map options">⚙️</button>
   <div id="mapOptionsPanel">
-    <div class="map-options-row">
-      <button class="style-btn active" data-style="clean" type="button" onclick="setMapStyle('clean')">Clean</button>
-      <button class="style-btn" data-style="standard" type="button" onclick="setMapStyle('standard')">Standard</button>
-    </div>
+    <button class="style-btn active" data-style="clean" type="button" onclick="setMapStyle('clean')">Clean</button>
+    <button class="style-btn" data-style="standard" type="button" onclick="setMapStyle('standard')">Standard</button>
+    <span class="map-options-sep">|</span>
     <button class="style-btn" id="trainToggleBtn" type="button" onclick="toggleTrainLines()">🚆 Trains</button>
+    <span class="map-options-sep">|</span>
     <button class="style-btn" id="lowPowerBtn" type="button" onclick="toggleLowPower()">⚡ Low power</button>
   </div>
-  <button id="mapOptionsToggle" type="button" onclick="toggleMapOptionsMenu()" title="Map options" aria-label="Map options">⚙️</button>
 </div>
 
 
@@ -1414,6 +1445,9 @@ window.addEventListener('DOMContentLoaded', () => {
     const setupBtn = document.getElementById('setupLowPowerToggle');
     if(setupBtn){ setupBtn.classList.add('active'); setupBtn.textContent = 'On'; }
   }
+  restoreColorPref('markerColorInput', '--my-marker-color', 'cityTagMarkerColor');
+  restoreColorPref('emojiColorInput', '--my-emoji-ring-color', 'cityTagEmojiColor');
+  restoreColorPref('powerupColorInput', '--my-powerup-color', 'cityTagPowerupColor');
 });
 
 /* Hover highlighting removed for now (the previous JS-driven approach kept
@@ -1593,6 +1627,22 @@ document.addEventListener('click', (e) => {
 /* ------------------------------------------------------------ */
 function toggleSetupOptionsMenu(){
   document.getElementById('setupOptionsPanel').classList.toggle('open');
+}
+
+/* ------------------------------------------------------------ */
+/* UI — CUSTOMIZABLE IDENTIFIER COLORS (marker / emoji ring / powerups) */
+/* ------------------------------------------------------------ */
+function updateColorPref(inputId, cssVar, storageKey){
+  const value = document.getElementById(inputId).value;
+  document.documentElement.style.setProperty(cssVar, value);
+  localStorage.setItem(storageKey, value);
+}
+function restoreColorPref(inputId, cssVar, storageKey){
+  const saved = localStorage.getItem(storageKey);
+  if(!saved) return;
+  document.documentElement.style.setProperty(cssVar, saved);
+  const el = document.getElementById(inputId);
+  if(el) el.value = saved;
 }
 
 /* ------------------------------------------------------------ */
