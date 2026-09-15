@@ -39,7 +39,7 @@
     --dglass-border:rgba(255,255,255,.1);
     --text-hi:#f4f1ec;
     --text-lo:#a8a29a;
-    --glass-hud-bg:rgba(20,18,19,.38);
+    --glass-hud-bg:rgba(20,18,19,.56);
     /* User-customizable identifier colors — overridden at runtime (and
        persisted to localStorage) via the homepage Options panel. */
     --my-marker-color:#f2a900;
@@ -225,7 +225,7 @@
   }
   .options-row input[type=color]{
     width:34px; height:26px; padding:0; border:1.5px solid var(--dglass-border);
-    border-radius:8px; background:none; cursor:pointer;
+    border-radius:8px; background:none; cursor:pointer; outline:none;
   }
   .toggle-switch{
     border:1.5px solid var(--dglass-border); background:rgba(255,255,255,.06);
@@ -436,31 +436,43 @@
   #mapOptionsMenu{
     position:fixed; bottom:14px; right:12px; z-index:1000;
     display:flex; flex-direction:row-reverse; align-items:center; gap:8px;
+    pointer-events:none;
   }
   #mapOptionsToggle{
-    flex:none;
+    flex:none; pointer-events:auto;
     width:38px; height:38px; border-radius:50%; border:1px solid var(--dglass-border);
     background:var(--glass-hud-bg); font-size:16px; cursor:pointer;
     display:flex; align-items:center; justify-content:center;
     box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
   }
-  #mapOptionsToggle:hover{background:rgba(255,255,255,.1);}
+  /* A highlight ON TOP of the resting tint, not a lighter/more-transparent
+     replacement of it — the old rgba(255,255,255,.1) hover was fainter than
+     the resting background, so hovering made the button look like it
+     vanished instead of lighting up. */
+  #mapOptionsToggle:hover{background:rgba(45,42,44,.72);}
   #mapOptionsToggle.active{background:var(--tagger);}
   /* A single scrollable line of options (not a dropdown) that slides out to
      the left of the gear button — "|" separators between option groups,
-     and horizontal scroll if it doesn't all fit. */
+     and horizontal scroll if it doesn't all fit. Opacity-only reveal: no
+     width/max-width animation, so the buttons inside never physically slide
+     underneath a stationary cursor mid-transition (that reflow was what
+     caused their hover state to flicker during open/close). */
   #mapOptionsPanel{
     display:flex; align-items:center; gap:2px; white-space:nowrap;
     background:var(--glass-hud-bg); border:1px solid var(--dglass-border); border-radius:16px;
     box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
-    max-width:0; opacity:0; overflow:hidden; pointer-events:none; padding:0;
-    transition:max-width .25s ease, opacity .2s ease, padding .25s ease;
+    max-width:min(70vw, 420px); overflow-x:auto; padding:4px 6px;
+    opacity:0; pointer-events:none;
+    transition:opacity .18s ease;
   }
   #mapOptionsPanel.open{
-    max-width:min(70vw, 420px); opacity:1; pointer-events:auto; padding:4px 6px;
-    overflow-x:auto;
+    opacity:1; pointer-events:auto;
   }
   .map-options-sep{ color:var(--text-lo); opacity:.5; font-size:12px; padding:0 2px; user-select:none; flex:none;}
+  #mapOptionsPanel input[type=color]{
+    flex:none; width:26px; height:26px; padding:0; border:1.5px solid var(--dglass-border);
+    border-radius:8px; background:none; cursor:pointer; outline:none;
+  }
   .style-btn{
     flex:none;
     border:none; background:transparent; padding:6px 11px; border-radius:12px;
@@ -888,6 +900,10 @@
     <button class="style-btn" id="trainToggleBtn" type="button" onclick="toggleTrainLines()">🚆 Trains</button>
     <span class="map-options-sep">|</span>
     <button class="style-btn" id="lowPowerBtn" type="button" onclick="toggleLowPower()">⚡ Low power</button>
+    <span class="map-options-sep">|</span>
+    <input type="color" id="markerColorInputMap" value="#f2a900" title="My marker color" onchange="updateColorPref(this.id,'--my-marker-color','cityTagMarkerColor')">
+    <input type="color" id="emojiColorInputMap" value="#3d5a78" title="Emoji ring color" onchange="updateColorPref(this.id,'--my-emoji-ring-color','cityTagEmojiColor')">
+    <input type="color" id="powerupColorInputMap" value="#1f4066" title="Powerup marker color" onchange="updateColorPref(this.id,'--my-powerup-color','cityTagPowerupColor')">
   </div>
 </div>
 
@@ -1445,9 +1461,9 @@ window.addEventListener('DOMContentLoaded', () => {
     const setupBtn = document.getElementById('setupLowPowerToggle');
     if(setupBtn){ setupBtn.classList.add('active'); setupBtn.textContent = 'On'; }
   }
-  restoreColorPref('markerColorInput', '--my-marker-color', 'cityTagMarkerColor');
-  restoreColorPref('emojiColorInput', '--my-emoji-ring-color', 'cityTagEmojiColor');
-  restoreColorPref('powerupColorInput', '--my-powerup-color', 'cityTagPowerupColor');
+  restoreColorPref('--my-marker-color', 'cityTagMarkerColor');
+  restoreColorPref('--my-emoji-ring-color', 'cityTagEmojiColor');
+  restoreColorPref('--my-powerup-color', 'cityTagPowerupColor');
 });
 
 /* Hover highlighting removed for now (the previous JS-driven approach kept
@@ -1632,17 +1648,31 @@ function toggleSetupOptionsMenu(){
 /* ------------------------------------------------------------ */
 /* UI — CUSTOMIZABLE IDENTIFIER COLORS (marker / emoji ring / powerups) */
 /* ------------------------------------------------------------ */
+// Each color preference has a homepage input and an in-map input showing
+// the same value — changing either one updates the CSS variable, storage,
+// and keeps the other input's swatch in sync.
+const COLOR_PREF_INPUT_IDS = {
+  '--my-marker-color': ['markerColorInput', 'markerColorInputMap'],
+  '--my-emoji-ring-color': ['emojiColorInput', 'emojiColorInputMap'],
+  '--my-powerup-color': ['powerupColorInput', 'powerupColorInputMap'],
+};
 function updateColorPref(inputId, cssVar, storageKey){
   const value = document.getElementById(inputId).value;
   document.documentElement.style.setProperty(cssVar, value);
   localStorage.setItem(storageKey, value);
+  (COLOR_PREF_INPUT_IDS[cssVar] || []).forEach(id => {
+    const el = document.getElementById(id);
+    if(el && id !== inputId) el.value = value;
+  });
 }
-function restoreColorPref(inputId, cssVar, storageKey){
+function restoreColorPref(cssVar, storageKey){
   const saved = localStorage.getItem(storageKey);
   if(!saved) return;
   document.documentElement.style.setProperty(cssVar, saved);
-  const el = document.getElementById(inputId);
-  if(el) el.value = saved;
+  (COLOR_PREF_INPUT_IDS[cssVar] || []).forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.value = saved;
+  });
 }
 
 /* ------------------------------------------------------------ */
