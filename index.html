@@ -45,13 +45,15 @@
     --my-marker-color:#f2a900;
     --my-emoji-ring-color:#3d5a78;
     --my-emoji-fill-color:#ffffff;
+    --my-powerup-color:#1f4066;
+    --my-powerup-fill-color:#ffffff;
   }
   /* ========================================================== */
   /* GLOBAL RESET & BASE
   /* ========================================================== */
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   button, a, .role-btn, .style-btn, .tag-btn{ -webkit-tap-highlight-color:transparent; }
-  html,body{height:100%;margin:0;}
+  html,body{height:100%;margin:0;color-scheme:light;}
   body{
     font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
     background:var(--paper);
@@ -225,7 +227,7 @@
   }
   .options-row input[type=color]{
     width:34px; height:26px; padding:0; border:1.5px solid var(--dglass-border);
-    border-radius:8px; cursor:pointer; outline:none;
+    border-radius:8px; cursor:pointer; outline:none; forced-color-adjust:none;
   }
   .options-row input[type=color]::-webkit-color-swatch-wrapper{ padding:2px; border-radius:6px; }
   .options-row input[type=color]::-webkit-color-swatch{ border:none; border-radius:5px; }
@@ -529,10 +531,12 @@
   .me-marker-dot{
     position:absolute; top:6px; left:6px; width:16px; height:16px; border-radius:50%;
     background:var(--my-marker-color); border:2px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.3);
+    forced-color-adjust:none;
   }
   .me-marker-ring{
     position:absolute; inset:0; border-radius:50%; border:2px solid var(--my-marker-color);
     animation:radar-pulse 2.2s ease-out infinite;
+    forced-color-adjust:none;
   }
   @keyframes radar-pulse{
     0%{transform:scale(.3); opacity:.9;}
@@ -543,20 +547,29 @@
      own emoji marker and powerup pickups (same visual language, different
      colors/content) — purely additive, wraps the existing .me-marker-wrap
      without changing it (so the Hunt highlight marker, which reuses the
-     same wrap/ring/dot classes on their own, is unaffected). */
-  .me-marker-outer{ position:relative; width:44px; height:64px; }
+     same wrap/ring/dot classes on their own, is unaffected). Drop-shadow
+     is applied to the whole outer shape (not box-shadow on just the badge)
+     so it doesn't dump extra darkness specifically onto the tail — that
+     mismatched shadow was what made the tail look like an odd darker patch
+     stuck onto an otherwise-even-colored badge. */
+  .me-marker-outer{
+    position:relative; width:44px; height:64px;
+    filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));
+  }
   .me-marker-emoji-badge{
     position:absolute; top:0; left:9px; width:26px; height:26px; border-radius:50%;
     background:var(--my-emoji-fill-color); border:2px solid var(--my-emoji-ring-color); color:var(--ink);
     display:flex; align-items:center; justify-content:center;
-    font-size:15px; line-height:1; box-shadow:0 2px 6px rgba(0,0,0,.4);
+    font-size:15px; line-height:1;
+    forced-color-adjust:none; /* keep the chosen fill literal even under OS/browser forced-color or smart-invert modes */
   }
   .me-marker-emoji-tail{
     position:absolute; top:24px; left:16px; width:0; height:0;
     border-left:6px solid transparent; border-right:6px solid transparent;
     border-top:7px solid var(--my-emoji-ring-color);
+    forced-color-adjust:none;
   }
-  body.low-power .me-marker-emoji-badge{ box-shadow:none; }
+  body.low-power .me-marker-outer{ filter:none; }
 
   /* Powerup markers reuse the exact same badge/tail/ring/dot structure as
      the player emoji marker above, just with the powerup color variables
@@ -872,7 +885,15 @@
       <span>Emoji badge fill</span>
       <input type="color" id="emojiFillColorInput" value="#ffffff" onchange="updateColorPref('emojiFillColorInput','--my-emoji-fill-color','cityTagEmojiFillColor')">
     </div>
-    <p class="sub" style="margin:8px 0 0; text-transform:none; font-weight:500; letter-spacing:0; font-size:12px;">Powerup pickups on the map use these same emoji badge colors.</p>
+    <div class="options-row">
+      <span>Powerup badge ring</span>
+      <input type="color" id="powerupColorInput" value="#1f4066" onchange="updateColorPref('powerupColorInput','--my-powerup-color','cityTagPowerupColor')">
+    </div>
+    <div class="options-row">
+      <span>Powerup badge fill</span>
+      <input type="color" id="powerupFillColorInput" value="#ffffff" onchange="updateColorPref('powerupFillColorInput','--my-powerup-fill-color','cityTagPowerupFillColor')">
+    </div>
+    <p class="sub" style="margin:8px 0 0; text-transform:none; font-weight:500; letter-spacing:0; font-size:12px;">The anchor dot under your own emoji matches your marker color; the anchor dot under a powerup matches that powerup's own ring/fill colors above.</p>
     <button id="closeColorsBtn" type="button">Close</button>
     </div>
   </div>
@@ -1477,6 +1498,8 @@ window.addEventListener('DOMContentLoaded', () => {
   restoreColorPref('markerColorInput', '--my-marker-color', 'cityTagMarkerColor');
   restoreColorPref('emojiColorInput', '--my-emoji-ring-color', 'cityTagEmojiColor');
   restoreColorPref('emojiFillColorInput', '--my-emoji-fill-color', 'cityTagEmojiFillColor');
+  restoreColorPref('powerupColorInput', '--my-powerup-color', 'cityTagPowerupColor');
+  restoreColorPref('powerupFillColorInput', '--my-powerup-fill-color', 'cityTagPowerupFillColor');
 });
 
 /* Hover highlighting removed for now (the previous JS-driven approach kept
@@ -2131,17 +2154,20 @@ async function refreshPowerups(){
       if(powerupMarkers[id]){
         powerupMarkers[id].setLatLng([p.lat, p.lng]);
       } else {
-        // Reuses the exact same badge+tail+ring+dot structure and colors as
-        // the player's own emoji marker — no separate powerup color setting
-        // to keep in sync, it's just always the same look as your emoji badge.
+        // Reuses the exact same badge+tail+ring+dot structure as the
+        // player's own emoji marker. Everything here — badge, tail, ring,
+        // and the anchor dot — uses the powerup ring/fill colors, not the
+        // player's own marker color: ring and dot get the powerup ring
+        // color (matching the badge border), dot's own fill mirrors the
+        // badge fill, so the whole pin reads as one consistent color pair.
         const icon = L.divIcon({
           className: '',
           html: '<div class="me-marker-outer">'
-              + '<div class="me-marker-emoji-badge">' + def.icon + '</div>'
-              + '<div class="me-marker-emoji-tail"></div>'
+              + '<div class="me-marker-emoji-badge" style="border-color:var(--my-powerup-color); background:var(--my-powerup-fill-color);">' + def.icon + '</div>'
+              + '<div class="me-marker-emoji-tail" style="border-top-color:var(--my-powerup-color);"></div>'
               + '<div class="me-marker-wrap" style="position:absolute; bottom:0; left:8px;">'
-              + '<div class="me-marker-ring" style="border-color:var(--my-emoji-ring-color);"></div>'
-              + '<div class="me-marker-dot" style="background:var(--my-emoji-ring-color);"></div></div></div>',
+              + '<div class="me-marker-ring" style="border-color:var(--my-powerup-color);"></div>'
+              + '<div class="me-marker-dot" style="background:var(--my-powerup-color);"></div></div></div>',
           iconSize: [44, 64], iconAnchor: [22, 50]
         });
         const marker = L.marker([p.lat, p.lng], { icon, pane: 'powerupsPane' }).addTo(map);
