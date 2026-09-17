@@ -508,6 +508,32 @@
   /* ========================================================== */
   .buildings-canvas{ pointer-events:none; } /* decorative only — never blocks map/marker clicks */
   /* ========================================================== */
+  /* 3D VIEW — FULL-SCREEN THREE.JS OVERLAY (separate from the Leaflet map)
+  /* ========================================================== */
+  #threeDView{
+    position:fixed; inset:0; z-index:3000; background:#0a0e14;
+    overflow:hidden;
+  }
+  #threeDCanvas{ position:absolute; inset:0; }
+  #threeDCanvas canvas{ display:block; width:100%; height:100%; touch-action:none; }
+  #threeDLoading{
+    position:absolute; inset:0; z-index:1; display:flex; align-items:center; justify-content:center;
+    color:var(--text-hi); font-weight:700; font-size:14px; text-align:center; padding:0 30px;
+    background:rgba(10,14,20,.92);
+  }
+  #close3DBtn{
+    position:absolute; top:14px; right:14px; z-index:2;
+    border:1.5px solid var(--dglass-border); background:var(--glass-hud-bg); color:var(--text-hi);
+    border-radius:999px; padding:9px 16px; font-size:13px; font-weight:700; cursor:pointer;
+  }
+  #close3DBtn:hover{ background:rgba(255,255,255,.16); }
+  #threeDHint{
+    position:absolute; bottom:14px; left:50%; transform:translateX(-50%); z-index:2;
+    color:var(--text-lo); font-size:11px; background:var(--glass-hud-bg);
+    padding:6px 12px; border-radius:999px; border:1px solid var(--dglass-border);
+    pointer-events:none; white-space:nowrap; max-width:90vw; overflow:hidden; text-overflow:ellipsis;
+  }
+  /* ========================================================== */
   /* MAP MARKERS & POPUPS — TRAIN STATIONS & TRACK TOOLTIPS
   /* ========================================================== */
   .station-label{
@@ -781,6 +807,10 @@
           <span>Marker &amp; powerup colors</span>
           <button class="toggle-switch" type="button" onclick="openColorsModal()">🎨 Colors</button>
         </div>
+        <div class="options-row">
+          <span>Preview the city in 3D</span>
+          <button class="toggle-switch" type="button" onclick="open3DView()">🏙️ 3D View</button>
+        </div>
       </div>
 
       <label for="nameInput">Your name</label>
@@ -903,6 +933,18 @@
   </div>
 </div>
 
+<!-- Real tilted-camera 3D view — a separate Three.js scene, independent of
+     the Leaflet map above (Leaflet is a flat 2D renderer and can't do
+     camera tilt/perspective). Three.js + OrbitControls are lazy-loaded
+     from CDN the first time this is opened, so players who never touch it
+     don't pay for it. -->
+<div id="threeDView" style="display:none;">
+  <div id="threeDCanvas"></div>
+  <div id="threeDLoading">Loading…</div>
+  <button id="close3DBtn" type="button" onclick="close3DView()">✕ Close 3D View</button>
+  <div id="threeDHint">Drag to rotate · scroll/pinch to zoom · right-click or two-finger drag to pan</div>
+</div>
+
 <div id="map"></div>
 <div id="transitionBlack"></div>
 
@@ -942,6 +984,8 @@
     <button class="style-btn" id="lowPowerBtn" type="button" onclick="toggleLowPower()">⚡ Low power</button>
     <span class="map-options-sep">|</span>
     <button class="style-btn" type="button" onclick="openColorsModal()">🎨 Colors</button>
+    <span class="map-options-sep">|</span>
+    <button class="style-btn" type="button" onclick="open3DView()">🏙️ 3D View</button>
   </div>
 </div>
 
@@ -1661,6 +1705,261 @@ function toggleBuildings3D(){
   btn.classList.toggle('active', buildingsOn);
   initBuildingsCanvas();
   redrawBuildings();
+}
+
+/* ============================================================ */
+/*         REAL 3D VIEW — SEPARATE THREE.JS SCENE                */
+/* ============================================================ */
+// This is a genuinely different rendering engine from the Leaflet map
+// above, not a mode of it — Leaflet is a flat 2D renderer with no concept
+// of camera tilt/perspective, so true "look around" 3D needs a real WebGL
+// scene. Three.js + OrbitControls are lazy-loaded from CDN only the first
+// time this view is opened, so the base game never pays for them.
+let threeScriptsPromise = null;
+function loadScriptTag(src){
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('failed to load ' + src));
+    document.head.appendChild(s);
+  });
+}
+function ensureThreeLoaded(){
+  if(!threeScriptsPromise){
+    threeScriptsPromise = loadScriptTag('https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js')
+      .then(() => loadScriptTag('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js'));
+  }
+  return threeScriptsPromise;
+}
+
+let threeScene, threeCamera, threeRenderer, threeControls;
+let threeInitialized = false;
+let threeAnimHandle = null;
+let threePlayerRefreshTimer = null;
+const threePlayerMeshes = {}; // id -> mesh
+let threeMeMesh = null;
+
+// Same flat local-meters approximation the rest of the game already uses
+// (see distMeters/offsetPointNear) — X = east, Z = south, Y = up, so a
+// camera starting south of a point and looking north sees it "ahead".
+function geoToWorld(lat, lng){
+  const x = (lng - CENTER[1]) * 111320 * Math.cos(CENTER[0] * Math.PI / 180);
+  const z = -(lat - CENTER[0]) * 111320;
+  return { x, z };
+}
+
+// Builds ALL buildings as one single merged BufferGeometry (one draw call)
+// instead of ~23k individual meshes, which would tank frame rate. Each
+// building is authored directly in world space (no THREE.Shape/Extrude
+// step, which needs polygon triangulation per building): a quad per
+// footprint edge for the walls, plus a simple fan triangulation for the
+// flat roof (fine for the mostly-convex simplified footprints; occasional
+// minor artifacts on a concave one are an acceptable trade for speed).
+function buildBuildingsGeometry(){
+  const positions = [];
+  const normals = [];
+  const indices = [];
+  let vi = 0;
+
+  for(const [height, ring] of BUILDINGS_DATA){
+    const n = ring.length;
+    if(n < 3) continue;
+    const pts = ring.map(([dx, dy]) => geoToWorld(CENTER[0] + dy / BUILDINGS_SCALE, CENTER[1] + dx / BUILDINGS_SCALE));
+
+    for(let i = 0; i < n; i++){
+      const a = pts[i], b = pts[(i + 1) % n];
+      const edgeX = b.x - a.x, edgeZ = b.z - a.z;
+      const len = Math.hypot(edgeX, edgeZ) || 1;
+      const nx = edgeZ / len, nz = -edgeX / len; // outward-ish normal for this wall segment
+      const base = vi;
+      positions.push(a.x, 0, a.z,  b.x, 0, b.z,  b.x, height, b.z,  a.x, height, a.z);
+      for(let k = 0; k < 4; k++) normals.push(nx, 0, nz);
+      indices.push(base, base + 1, base + 2,  base, base + 2, base + 3);
+      vi += 4;
+    }
+
+    const roofBase = vi;
+    for(let i = 0; i < n; i++){
+      positions.push(pts[i].x, height, pts[i].z);
+      normals.push(0, 1, 0);
+      vi++;
+    }
+    for(let i = 1; i < n - 1; i++){
+      indices.push(roofBase, roofBase + i, roofBase + i + 1);
+    }
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+  geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(normals), 3));
+  geo.setIndex(new THREE.BufferAttribute(vi > 65535 ? new Uint32Array(indices) : new Uint16Array(indices), 1));
+  return geo;
+}
+
+function init3DScene(){
+  const container = document.getElementById('threeDCanvas');
+  const width = container.clientWidth, height = container.clientHeight;
+
+  threeScene = new THREE.Scene();
+  threeScene.background = new THREE.Color(0xbfd7e8);
+  threeScene.fog = new THREE.Fog(0xbfd7e8, 900, 2600);
+
+  threeCamera = new THREE.PerspectiveCamera(60, width / height, 1, 20000);
+
+  threeRenderer = new THREE.WebGLRenderer({ antialias: true });
+  threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  threeRenderer.setSize(width, height);
+  container.innerHTML = '';
+  container.appendChild(threeRenderer.domElement);
+
+  threeScene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.75);
+  sun.position.set(600, 900, 300);
+  threeScene.add(sun);
+
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(7000, 7000),
+    new THREE.MeshLambertMaterial({ color: 0xe9e4d8 })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  threeScene.add(ground);
+
+  // Game boundary, drawn as a thin line at ground level.
+  const boundaryPts = BOUNDARY.map(([lat, lng]) => {
+    const w = geoToWorld(lat, lng);
+    return new THREE.Vector3(w.x, 1, w.z);
+  });
+  boundaryPts.push(boundaryPts[0].clone());
+  const boundaryGeo = new THREE.BufferGeometry().setFromPoints(boundaryPts);
+  threeScene.add(new THREE.Line(boundaryGeo, new THREE.LineBasicMaterial({ color: 0xd1352f })));
+
+  // Buildings — single mesh, double-sided so it renders correctly even if
+  // a particular building's winding order ends up flipped by this coordinate
+  // setup (cheap insurance against invisible walls, given this can't be
+  // interactively test-rendered while writing it).
+  const buildingsMesh = new THREE.Mesh(
+    buildBuildingsGeometry(),
+    new THREE.MeshLambertMaterial({ color: 0xb9ae9c, side: THREE.DoubleSide })
+  );
+  threeScene.add(buildingsMesh);
+
+  threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
+  threeControls.maxPolarAngle = Math.PI / 2 - 0.02; // stop the camera going under the ground
+  threeControls.minDistance = 20;
+  threeControls.maxDistance = 3000;
+
+  // Start looking at wherever the player actually is, if we know that yet
+  // (works whether this is opened pre-game from the homepage or mid-game).
+  const startAt = myCurrentPos ? geoToWorld(myCurrentPos.lat, myCurrentPos.lng) : { x: 0, z: 0 };
+  threeControls.target.set(startAt.x, 0, startAt.z);
+  threeCamera.position.set(startAt.x, 220, startAt.z + 320);
+  threeControls.update();
+
+  threeInitialized = true;
+}
+
+function start3DLoop(){
+  const tick = () => {
+    threeControls.update();
+    threeRenderer.render(threeScene, threeCamera);
+    threeAnimHandle = requestAnimationFrame(tick);
+  };
+  tick();
+}
+function stop3DLoop(){
+  if(threeAnimHandle){ cancelAnimationFrame(threeAnimHandle); threeAnimHandle = null; }
+}
+
+// Mirrors refreshOthers()'s own visibility rules (real roles for taggers,
+// anonymized dots for runners, invisibility hides the player) so the 3D
+// view never leaks more than the 2D map already shows.
+async function update3DPlayers(){
+  if(!threeInitialized) return;
+  try{
+    const snap = await db.ref('players').once('value');
+    const all = snap.val() || {};
+    const now = Date.now();
+    const seen = new Set();
+    const iAmTagger = myRole === 'tagger';
+
+    for(const [id, data] of Object.entries(all)){
+      if(id === myId || !data || data.isGhost) continue;
+      if(now - (data.ts || 0) > STALE_AFTER) continue;
+      if(data.activePower && data.activePower.type === 'invisibility' && data.activePower.expiresAt > now) continue;
+
+      seen.add(id);
+      const w = geoToWorld(data.lat, data.lng);
+      const color = iAmTagger ? (data.role === 'tagger' ? 0xe0332b : 0x2277c4) : 0x6b6f76;
+      if(threePlayerMeshes[id]){
+        threePlayerMeshes[id].position.set(w.x, 8, w.z);
+        threePlayerMeshes[id].material.color.setHex(color);
+      } else {
+        const mesh = new THREE.Mesh(new THREE.ConeGeometry(4, 14, 8), new THREE.MeshLambertMaterial({ color }));
+        mesh.position.set(w.x, 8, w.z);
+        threeScene.add(mesh);
+        threePlayerMeshes[id] = mesh;
+      }
+    }
+
+    Object.keys(threePlayerMeshes).forEach(id => {
+      if(!seen.has(id)){
+        threeScene.remove(threePlayerMeshes[id]);
+        threePlayerMeshes[id].geometry.dispose();
+        threePlayerMeshes[id].material.dispose();
+        delete threePlayerMeshes[id];
+      }
+    });
+
+    if(myCurrentPos){
+      const w = geoToWorld(myCurrentPos.lat, myCurrentPos.lng);
+      if(!threeMeMesh){
+        threeMeMesh = new THREE.Mesh(new THREE.ConeGeometry(5, 16, 8), new THREE.MeshLambertMaterial({ color: 0xf2a900 }));
+        threeScene.add(threeMeMesh);
+      }
+      threeMeMesh.position.set(w.x, 8, w.z);
+    }
+  }catch(e){ console.error('3D player update failed', e); }
+}
+
+function on3DResize(){
+  if(!threeRenderer || document.getElementById('threeDView').style.display === 'none') return;
+  const c = document.getElementById('threeDCanvas');
+  threeCamera.aspect = c.clientWidth / c.clientHeight;
+  threeCamera.updateProjectionMatrix();
+  threeRenderer.setSize(c.clientWidth, c.clientHeight);
+}
+window.addEventListener('resize', on3DResize);
+
+async function open3DView(){
+  const overlay = document.getElementById('threeDView');
+  const loadingEl = document.getElementById('threeDLoading');
+  overlay.style.display = 'block';
+  loadingEl.style.display = 'flex';
+  loadingEl.textContent = 'Loading the 3D engine…';
+  try{
+    await ensureThreeLoaded();
+    if(!threeInitialized){
+      loadingEl.textContent = 'Building the city — this can take a moment…';
+      await new Promise(r => setTimeout(r, 30)); // let that message paint before the heavy synchronous build below
+      init3DScene();
+    } else {
+      on3DResize();
+    }
+    loadingEl.style.display = 'none';
+    start3DLoop();
+    update3DPlayers();
+    threePlayerRefreshTimer = setInterval(update3DPlayers, 4000);
+  }catch(e){
+    console.error('3D view failed to load', e);
+    loadingEl.textContent = "Couldn't load the 3D view — check your connection and try again.";
+  }
+}
+
+function close3DView(){
+  document.getElementById('threeDView').style.display = 'none';
+  stop3DLoop();
+  if(threePlayerRefreshTimer){ clearInterval(threePlayerRefreshTimer); threePlayerRefreshTimer = null; }
 }
 
 /* ------------------------------------------------------------ */
