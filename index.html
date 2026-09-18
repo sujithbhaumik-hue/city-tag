@@ -314,14 +314,14 @@
     78%{opacity:1;}
     100%{opacity:0;}
   }
-  #hud, #legend, #globalCountdown, #recenterBtn, #mapOptionsMenu{
+  #hud, #legend, #globalCountdown, #recenterBtn, #view3DBtn, #mapOptionsMenu{
     opacity:0; transition:opacity .6s ease;
   }
-  #hud.visible, #legend.visible, #globalCountdown.visible, #recenterBtn.visible, #mapOptionsMenu.visible{
+  #hud.visible, #legend.visible, #globalCountdown.visible, #recenterBtn.visible, #view3DBtn.visible, #mapOptionsMenu.visible{
     opacity:1;
   }
   body.low-power #setup, body.low-power #hud, body.low-power #legend,
-  body.low-power #globalCountdown, body.low-power #recenterBtn, body.low-power #mapOptionsMenu,
+  body.low-power #globalCountdown, body.low-power #recenterBtn, body.low-power #view3DBtn, body.low-power #mapOptionsMenu,
   body.low-power #transitionBlack{
     transition:none !important; animation:none !important;
   }
@@ -438,6 +438,21 @@
     transition:transform .15s;
   }
   #recenterBtn:active{transform:scale(0.92);}
+
+  /* ========================================================== */
+  /* IN-GAME HUD — 3D VIEW BUTTON
+  /* ========================================================== */
+  #view3DBtn{
+    position:fixed; bottom:112px; right:12px; z-index:1000;
+    width:38px; height:38px; border-radius:50%; border:1px solid var(--dglass-border);
+    background:var(--glass-hud-bg);
+    font-size:16px; cursor:pointer;
+    box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .15s;
+  }
+  #view3DBtn:hover{ background:rgba(255,255,255,.1); }
+  #view3DBtn:active{transform:scale(0.92);}
 
   /* ========================================================== */
   /* IN-GAME HUD — COLLAPSIBLE MAP OPTIONS MENU (style/trains/low power)
@@ -970,6 +985,7 @@
 </div>
 
 <button id="recenterBtn" style="display:none;" type="button" onclick="recenterOnMe()" title="Find me" aria-label="Recenter on my location">📍</button>
+<button id="view3DBtn" style="display:none;" type="button" onclick="open3DView()" title="3D View" aria-label="Open 3D view">🏙️</button>
 
 <div id="mapOptionsMenu" style="display:none;">
   <button id="mapOptionsToggle" type="button" onclick="toggleMapOptionsMenu()" title="Map options" aria-label="Map options">⚙️</button>
@@ -984,8 +1000,6 @@
     <button class="style-btn" id="lowPowerBtn" type="button" onclick="toggleLowPower()">⚡ Low power</button>
     <span class="map-options-sep">|</span>
     <button class="style-btn" type="button" onclick="openColorsModal()">🎨 Colors</button>
-    <span class="map-options-sep">|</span>
-    <button class="style-btn" type="button" onclick="open3DView()">🏙️ 3D View</button>
   </div>
 </div>
 
@@ -1469,15 +1483,17 @@ function startGame(){
   const legendEl = document.getElementById('legend');
   const countdownEl = document.getElementById('globalCountdown');
   const recenterEl = document.getElementById('recenterBtn');
+  const view3DEl = document.getElementById('view3DBtn');
   const mapOptionsMenuEl = document.getElementById('mapOptionsMenu');
   const revealHud = () => {
     hudEl.style.display = 'flex';
     legendEl.style.display = 'block';
     countdownEl.style.display = 'flex';
     recenterEl.style.display = 'flex';
+    view3DEl.style.display = 'flex';
     mapOptionsMenuEl.style.display = 'flex';
     requestAnimationFrame(() => {
-      [hudEl, legendEl, countdownEl, recenterEl, mapOptionsMenuEl].forEach(el => el.classList.add('visible'));
+      [hudEl, legendEl, countdownEl, recenterEl, view3DEl, mapOptionsMenuEl].forEach(el => el.classList.add('visible'));
     });
   };
 
@@ -1945,6 +1961,14 @@ async function open3DView(){
       init3DScene();
     } else {
       on3DResize();
+      // Re-center on wherever the player is NOW, not just where they were
+      // the first time this view was ever opened.
+      if(myCurrentPos){
+        const w = geoToWorld(myCurrentPos.lat, myCurrentPos.lng);
+        threeControls.target.set(w.x, 0, w.z);
+        threeCamera.position.set(w.x, 220, w.z + 320);
+        threeControls.update();
+      }
     }
     loadingEl.style.display = 'none';
     start3DLoop();
