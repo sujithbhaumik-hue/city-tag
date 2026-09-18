@@ -314,14 +314,14 @@
     78%{opacity:1;}
     100%{opacity:0;}
   }
-  #hud, #legend, #globalCountdown, #recenterBtn, #view3DBtn, #mapOptionsMenu{
+  #hud, #legend, #globalCountdown, #recenterBtn, #view3DBtn, #viewMaplibreBtn, #mapOptionsMenu{
     opacity:0; transition:opacity .6s ease;
   }
-  #hud.visible, #legend.visible, #globalCountdown.visible, #recenterBtn.visible, #view3DBtn.visible, #mapOptionsMenu.visible{
+  #hud.visible, #legend.visible, #globalCountdown.visible, #recenterBtn.visible, #view3DBtn.visible, #viewMaplibreBtn.visible, #mapOptionsMenu.visible{
     opacity:1;
   }
   body.low-power #setup, body.low-power #hud, body.low-power #legend,
-  body.low-power #globalCountdown, body.low-power #recenterBtn, body.low-power #view3DBtn, body.low-power #mapOptionsMenu,
+  body.low-power #globalCountdown, body.low-power #recenterBtn, body.low-power #view3DBtn, body.low-power #viewMaplibreBtn, body.low-power #mapOptionsMenu,
   body.low-power #transitionBlack{
     transition:none !important; animation:none !important;
   }
@@ -455,6 +455,21 @@
   #view3DBtn:active{transform:scale(0.92);}
 
   /* ========================================================== */
+  /* IN-GAME HUD — 3D MAP (MAPLIBRE) BUTTON
+  /* ========================================================== */
+  #viewMaplibreBtn{
+    position:fixed; bottom:160px; right:12px; z-index:1000;
+    width:38px; height:38px; border-radius:50%; border:1px solid var(--dglass-border);
+    background:var(--glass-hud-bg);
+    font-size:16px; cursor:pointer;
+    box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .15s;
+  }
+  #viewMaplibreBtn:hover{ background:rgba(255,255,255,.1); }
+  #viewMaplibreBtn:active{transform:scale(0.92);}
+
+  /* ========================================================== */
   /* IN-GAME HUD — COLLAPSIBLE MAP OPTIONS MENU (style/trains/low power)
   /* ========================================================== */
   #mapOptionsMenu{
@@ -547,6 +562,35 @@
     color:var(--text-lo); font-size:11px; background:var(--glass-hud-bg);
     padding:6px 12px; border-radius:999px; border:1px solid var(--dglass-border);
     pointer-events:none; white-space:nowrap; max-width:90vw; overflow:hidden; text-overflow:ellipsis;
+  }
+  /* ========================================================== */
+  /* 3D MAP — FULL-SCREEN MAPLIBRE GL OVERLAY (separate from the Leaflet map)
+  /* ========================================================== */
+  #maplibreView{
+    position:fixed; inset:0; z-index:3000; background:#0a0e14;
+    overflow:hidden;
+  }
+  #maplibreContainer{ position:absolute; inset:0; }
+  #maplibreLoading{
+    position:absolute; inset:0; z-index:1; display:flex; align-items:center; justify-content:center;
+    color:var(--text-hi); font-weight:700; font-size:14px; text-align:center; padding:0 30px;
+    background:rgba(10,14,20,.92);
+  }
+  #closeMaplibreBtn{
+    position:absolute; top:14px; right:14px; z-index:2;
+    border:1.5px solid var(--dglass-border); background:var(--glass-hud-bg); color:var(--text-hi);
+    border-radius:999px; padding:9px 16px; font-size:13px; font-weight:700; cursor:pointer;
+  }
+  #closeMaplibreBtn:hover{ background:rgba(255,255,255,.16); }
+  #maplibreHint{
+    position:absolute; bottom:14px; left:50%; transform:translateX(-50%); z-index:2;
+    color:var(--text-lo); font-size:11px; background:var(--glass-hud-bg);
+    padding:6px 12px; border-radius:999px; border:1px solid var(--dglass-border);
+    pointer-events:none; white-space:nowrap; max-width:90vw; overflow:hidden; text-overflow:ellipsis;
+  }
+  .maplibre-player-marker{
+    width:14px; height:14px; border-radius:50%; border:2px solid #fff;
+    box-shadow:0 0 0 1px rgba(0,0,0,.3);
   }
   /* ========================================================== */
   /* MAP MARKERS & POPUPS — TRAIN STATIONS & TRACK TOOLTIPS
@@ -826,6 +870,10 @@
           <span>Preview the city in 3D</span>
           <button class="toggle-switch" type="button" onclick="open3DView()">🏙️ 3D View</button>
         </div>
+        <div class="options-row">
+          <span>Preview the city as a 3D map</span>
+          <button class="toggle-switch" type="button" onclick="openMapLibreView()">🗺️ 3D Map</button>
+        </div>
       </div>
 
       <label for="nameInput">Your name</label>
@@ -960,6 +1008,18 @@
   <div id="threeDHint">Drag to rotate · scroll/pinch to zoom · right-click or two-finger drag to pan</div>
 </div>
 
+<!-- A THIRD, separate 3D option — MapLibre GL JS instead of a hand-built
+     Three.js scene. MapLibre has real fill-extrusion buildings and camera
+     pitch/rotate built in and battle-tested, so it should look and behave
+     better than either the flat 2D "Buildings" overlay or the custom
+     Three.js view above. Lazy-loaded from CDN on first open. -->
+<div id="maplibreView" style="display:none;">
+  <div id="maplibreContainer"></div>
+  <div id="maplibreLoading">Loading…</div>
+  <button id="closeMaplibreBtn" type="button" onclick="closeMapLibreView()">✕ Close 3D Map</button>
+  <div id="maplibreHint">Drag to pan · right-click/ctrl+drag or two-finger twist to rotate &amp; tilt · scroll/pinch to zoom</div>
+</div>
+
 <div id="map"></div>
 <div id="transitionBlack"></div>
 
@@ -986,6 +1046,7 @@
 
 <button id="recenterBtn" style="display:none;" type="button" onclick="recenterOnMe()" title="Find me" aria-label="Recenter on my location">📍</button>
 <button id="view3DBtn" style="display:none;" type="button" onclick="open3DView()" title="3D View" aria-label="Open 3D view">🏙️</button>
+<button id="viewMaplibreBtn" style="display:none;" type="button" onclick="openMapLibreView()" title="3D Map" aria-label="Open 3D map">🗺️</button>
 
 <div id="mapOptionsMenu" style="display:none;">
   <button id="mapOptionsToggle" type="button" onclick="toggleMapOptionsMenu()" title="Map options" aria-label="Map options">⚙️</button>
@@ -1484,6 +1545,7 @@ function startGame(){
   const countdownEl = document.getElementById('globalCountdown');
   const recenterEl = document.getElementById('recenterBtn');
   const view3DEl = document.getElementById('view3DBtn');
+  const viewMaplibreEl = document.getElementById('viewMaplibreBtn');
   const mapOptionsMenuEl = document.getElementById('mapOptionsMenu');
   const revealHud = () => {
     hudEl.style.display = 'flex';
@@ -1491,9 +1553,10 @@ function startGame(){
     countdownEl.style.display = 'flex';
     recenterEl.style.display = 'flex';
     view3DEl.style.display = 'flex';
+    viewMaplibreEl.style.display = 'flex';
     mapOptionsMenuEl.style.display = 'flex';
     requestAnimationFrame(() => {
-      [hudEl, legendEl, countdownEl, recenterEl, view3DEl, mapOptionsMenuEl].forEach(el => el.classList.add('visible'));
+      [hudEl, legendEl, countdownEl, recenterEl, view3DEl, viewMaplibreEl, mapOptionsMenuEl].forEach(el => el.classList.add('visible'));
     });
   };
 
@@ -1984,6 +2047,196 @@ function close3DView(){
   document.getElementById('threeDView').style.display = 'none';
   stop3DLoop();
   if(threePlayerRefreshTimer){ clearInterval(threePlayerRefreshTimer); threePlayerRefreshTimer = null; }
+}
+
+/* ============================================================ */
+/*   3D MAP — MAPLIBRE GL JS (third, separate 3D option)         */
+/* ============================================================ */
+// Unlike the hand-built Three.js view above, MapLibre GL JS has real
+// fill-extrusion buildings and camera pitch/rotate/pan/zoom built in and
+// battle-tested — nothing here is hand-rolled geometry or camera math, so
+// it should be both more reliable and better-looking. Lazy-loaded from CDN
+// only on first open, same reasoning as the Three.js view.
+let maplibreMap = null;
+let maplibreInitialized = false;
+const maplibrePlayerMarkers = {}; // id -> maplibregl.Marker
+let maplibreMeMarker = null;
+let maplibrePlayerRefreshTimer = null;
+let maplibreScriptsPromise = null;
+
+function ensureMaplibreLoaded(){
+  if(!maplibreScriptsPromise){
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.2/dist/maplibre-gl.css';
+    document.head.appendChild(link);
+    maplibreScriptsPromise = loadScriptTag('https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.2/dist/maplibre-gl.js');
+  }
+  return maplibreScriptsPromise;
+}
+
+// BUILDINGS_DATA is [height, [[dx,dy],...]] with dx/dy relative to CENTER
+// (see the comment above BUILDINGS_DATA's own definition) — GeoJSON wants
+// [lng,lat] rings, closed (first point repeated at the end).
+function buildBuildingsGeoJSON(){
+  const features = BUILDINGS_DATA.map(([height, ring]) => {
+    const coords = ring.map(([dx, dy]) => [
+      CENTER[1] + dx / BUILDINGS_SCALE,
+      CENTER[0] + dy / BUILDINGS_SCALE
+    ]);
+    coords.push(coords[0]);
+    return {
+      type: 'Feature',
+      properties: { height },
+      geometry: { type: 'Polygon', coordinates: [coords] }
+    };
+  });
+  return { type: 'FeatureCollection', features };
+}
+
+function initMapLibreScene(){
+  return new Promise((resolve) => {
+    const startPos = myCurrentPos || { lat: CENTER[0], lng: CENTER[1] };
+    maplibreMap = new maplibregl.Map({
+      container: 'maplibreContainer',
+      style: {
+        version: 8,
+        sources: {
+          carto: {
+            type: 'raster',
+            tiles: [
+              'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+              'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+              'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
+            ],
+            tileSize: 256,
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+          }
+        },
+        layers: [{ id: 'carto-base', type: 'raster', source: 'carto' }]
+      },
+      center: [startPos.lng, startPos.lat],
+      zoom: 16,
+      pitch: 60,
+      bearing: -20,
+      maxPitch: 75,
+      antialias: true
+    });
+
+    maplibreMap.on('load', () => {
+      maplibreMap.addSource('boundary', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: BOUNDARY.map(([lat, lng]) => [lng, lat]).concat([[BOUNDARY[0][1], BOUNDARY[0][0]]])
+          }
+        }
+      });
+      maplibreMap.addLayer({
+        id: 'boundary-line', type: 'line', source: 'boundary',
+        paint: { 'line-color': '#d1352f', 'line-width': 2 }
+      });
+
+      maplibreMap.addSource('buildings', { type: 'geojson', data: buildBuildingsGeoJSON() });
+      maplibreMap.addLayer({
+        id: 'buildings-3d', type: 'fill-extrusion', source: 'buildings',
+        paint: {
+          'fill-extrusion-color': '#b9ae9c',
+          'fill-extrusion-height': ['get', 'height'],
+          'fill-extrusion-base': 0,
+          'fill-extrusion-opacity': 0.92
+        }
+      });
+
+      maplibreInitialized = true;
+      resolve();
+    });
+  });
+}
+
+// Mirrors the same visibility rules as the Leaflet map's refreshOthers()
+// and the Three.js view's update3DPlayers() — taggers see real roles,
+// runners see anonymized gray, invisibility hides the player entirely.
+async function updateMaplibrePlayers(){
+  if(!maplibreMap || !maplibreInitialized) return;
+  try{
+    const snap = await db.ref('players').once('value');
+    const all = snap.val() || {};
+    const now = Date.now();
+    const seen = new Set();
+    const iAmTagger = myRole === 'tagger';
+
+    for(const [id, data] of Object.entries(all)){
+      if(id === myId || !data || data.isGhost) continue;
+      if(now - (data.ts || 0) > STALE_AFTER) continue;
+      if(data.activePower && data.activePower.type === 'invisibility' && data.activePower.expiresAt > now) continue;
+
+      seen.add(id);
+      const color = iAmTagger ? (data.role === 'tagger' ? '#e0332b' : '#2277c4') : '#6b6f76';
+      if(maplibrePlayerMarkers[id]){
+        maplibrePlayerMarkers[id].setLngLat([data.lng, data.lat]);
+        maplibrePlayerMarkers[id].getElement().style.background = color;
+      } else {
+        const el = document.createElement('div');
+        el.className = 'maplibre-player-marker';
+        el.style.background = color;
+        maplibrePlayerMarkers[id] = new maplibregl.Marker({ element: el }).setLngLat([data.lng, data.lat]).addTo(maplibreMap);
+      }
+    }
+
+    Object.keys(maplibrePlayerMarkers).forEach(id => {
+      if(!seen.has(id)){ maplibrePlayerMarkers[id].remove(); delete maplibrePlayerMarkers[id]; }
+    });
+
+    if(myCurrentPos){
+      if(!maplibreMeMarker){
+        const el = document.createElement('div');
+        el.className = 'maplibre-player-marker';
+        el.style.background = '#f2a900';
+        el.style.width = '18px';
+        el.style.height = '18px';
+        maplibreMeMarker = new maplibregl.Marker({ element: el }).setLngLat([myCurrentPos.lng, myCurrentPos.lat]).addTo(maplibreMap);
+      } else {
+        maplibreMeMarker.setLngLat([myCurrentPos.lng, myCurrentPos.lat]);
+      }
+    }
+  }catch(e){ console.error('3D map player update failed', e); }
+}
+
+window.addEventListener('resize', () => {
+  if(maplibreMap && document.getElementById('maplibreView').style.display !== 'none') maplibreMap.resize();
+});
+
+async function openMapLibreView(){
+  const overlay = document.getElementById('maplibreView');
+  const loadingEl = document.getElementById('maplibreLoading');
+  overlay.style.display = 'block';
+  loadingEl.style.display = 'flex';
+  loadingEl.textContent = 'Loading the 3D map…';
+  try{
+    await ensureMaplibreLoaded();
+    if(!maplibreMap){
+      loadingEl.textContent = 'Building the 3D map — this can take a moment…';
+      await initMapLibreScene();
+    } else {
+      maplibreMap.resize();
+      if(myCurrentPos) maplibreMap.jumpTo({ center: [myCurrentPos.lng, myCurrentPos.lat] });
+    }
+    loadingEl.style.display = 'none';
+    updateMaplibrePlayers();
+    maplibrePlayerRefreshTimer = setInterval(updateMaplibrePlayers, 4000);
+  }catch(e){
+    console.error('3D map failed to load', e);
+    loadingEl.textContent = "Couldn't load the 3D map — check your connection and try again.";
+  }
+}
+
+function closeMapLibreView(){
+  document.getElementById('maplibreView').style.display = 'none';
+  if(maplibrePlayerRefreshTimer){ clearInterval(maplibrePlayerRefreshTimer); maplibrePlayerRefreshTimer = null; }
 }
 
 /* ------------------------------------------------------------ */
