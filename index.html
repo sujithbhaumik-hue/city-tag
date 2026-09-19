@@ -592,6 +592,13 @@
     width:14px; height:14px; border-radius:50%; border:2px solid #fff;
     box-shadow:0 0 0 1px rgba(0,0,0,.3);
   }
+  .maplibre-powerup-marker{
+    width:28px; height:28px; border-radius:50%;
+    background:#fff; border:2px solid var(--amber);
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; cursor:pointer;
+    box-shadow:0 2px 6px rgba(0,0,0,.35);
+  }
   /* ========================================================== */
   /* MAP MARKERS & POPUPS — TRAIN STATIONS & TRACK TOOLTIPS
   /* ========================================================== */
@@ -1053,6 +1060,7 @@
   <div id="mapOptionsPanel">
     <button class="style-btn active" data-style="clean" type="button" onclick="setMapStyle('clean')">Clean</button>
     <button class="style-btn" data-style="standard" type="button" onclick="setMapStyle('standard')">Standard</button>
+    <button class="style-btn" type="button" onclick="openMapLibreView()">🗺️ 3D Map</button>
     <span class="map-options-sep">|</span>
     <button class="style-btn" id="trainToggleBtn" type="button" onclick="toggleTrainLines()">🚆 Trains</button>
     <span class="map-options-sep">|</span>
@@ -2160,6 +2168,8 @@ function initMapLibreScene(){
 // Mirrors the same visibility rules as the Leaflet map's refreshOthers()
 // and the Three.js view's update3DPlayers() — taggers see real roles,
 // runners see anonymized gray, invisibility hides the player entirely.
+// Popups reuse the exact same tag-btn markup/onclick as the 2D map, so
+// tagging someone from here calls the very same tagPlayer() function.
 async function updateMaplibrePlayers(){
   if(!maplibreMap || !maplibreInitialized) return;
   try{
@@ -2175,20 +2185,41 @@ async function updateMaplibrePlayers(){
       if(data.activePower && data.activePower.type === 'invisibility' && data.activePower.expiresAt > now) continue;
 
       seen.add(id);
-      const color = iAmTagger ? (data.role === 'tagger' ? '#e0332b' : '#2277c4') : '#6b6f76';
+      const ageMin = Math.max(0, Math.round((now - data.ts) / 60000));
+      const seenText = ageMin === 0 ? 'just now' : ageMin + 'm ago';
+      const isRevealedForMe = !iAmTagger && id === revealedTargetId;
+
+      let color, popupHtml;
+      if(iAmTagger){
+        color = data.role === 'tagger' ? '#e0332b' : '#2277c4';
+        popupHtml = '<b>' + escapeHtml(data.name) + '</b> (' + data.role + ')<br>last seen ' + seenText;
+        if(data.role === 'runner' && !data.isGhost){
+          popupHtml += '<br><button class="tag-btn" onclick="tagPlayer(\'' + id + '\')">Tag ' + escapeHtml(data.name) + '</button>';
+        }
+      } else if(isRevealedForMe){
+        color = data.role === 'tagger' ? '#e0332b' : '#2277c4';
+        popupHtml = '<b>' + escapeHtml(data.name) + '</b> (' + data.role + ') 🔍<br>last seen ' + seenText;
+      } else {
+        color = '#6b6f76';
+        popupHtml = '<b>' + escapeHtml(data.name) + '</b> (player)<br>last seen ' + seenText;
+      }
+
       if(maplibrePlayerMarkers[id]){
-        maplibrePlayerMarkers[id].setLngLat([data.lng, data.lat]);
-        maplibrePlayerMarkers[id].getElement().style.background = color;
+        maplibrePlayerMarkers[id].marker.setLngLat([data.lng, data.lat]);
+        maplibrePlayerMarkers[id].marker.getElement().style.background = color;
+        maplibrePlayerMarkers[id].popup.setHTML(popupHtml);
       } else {
         const el = document.createElement('div');
         el.className = 'maplibre-player-marker';
         el.style.background = color;
-        maplibrePlayerMarkers[id] = new maplibregl.Marker({ element: el }).setLngLat([data.lng, data.lat]).addTo(maplibreMap);
+        const popup = new maplibregl.Popup({ offset: 12 }).setHTML(popupHtml);
+        const marker = new maplibregl.Marker({ element: el }).setLngLat([data.lng, data.lat]).setPopup(popup).addTo(maplibreMap);
+        maplibrePlayerMarkers[id] = { marker, popup };
       }
     }
 
     Object.keys(maplibrePlayerMarkers).forEach(id => {
-      if(!seen.has(id)){ maplibrePlayerMarkers[id].remove(); delete maplibrePlayerMarkers[id]; }
+      if(!seen.has(id)){ maplibrePlayerMarkers[id].marker.remove(); delete maplibrePlayerMarkers[id]; }
     });
 
     if(myCurrentPos){
@@ -2204,6 +2235,101 @@ async function updateMaplibrePlayers(){
       }
     }
   }catch(e){ console.error('3D map player update failed', e); }
+}
+
+// Powerups: reads the SAME lastKnownPowerups cache the 2D map's own
+// refreshPowerups() already keeps warm in the background (that loop runs
+// continuously from startGame() regardless of which view is open), so
+// this never needs its own Firebase reads — just renders what's already
+// there, with the exact same buildPowerupPopup()/collectPowerup() the 2D
+// map uses, so collecting a power here is identical to collecting it there.
+const maplibrePowerupMarkers = {}; // id -> { marker, popup }
+function refreshMaplibrePowerups(){
+  if(!maplibreMap || !maplibreInitialized) return;
+  const seen = new Set();
+  for(const [id, p] of Object.entries(lastKnownPowerups)){
+    const def = POWERUP_TYPES[p.type];
+    if(!def) continue;
+    seen.add(id);
+    const html = buildPowerupPopup(id, p);
+    if(maplibrePowerupMarkers[id]){
+      maplibrePowerupMarkers[id].marker.setLngLat([p.lng, p.lat]);
+      maplibrePowerupMarkers[id].popup.setHTML(html);
+    } else {
+      const el = document.createElement('div');
+      el.className = 'maplibre-powerup-marker';
+      el.textContent = def.icon;
+      const popup = new maplibregl.Popup({ offset: 16 }).setHTML(html);
+      const marker = new maplibregl.Marker({ element: el }).setLngLat([p.lng, p.lat]).setPopup(popup).addTo(maplibreMap);
+      maplibrePowerupMarkers[id] = { marker, popup };
+    }
+  }
+  Object.keys(maplibrePowerupMarkers).forEach(id => {
+    if(!seen.has(id)){ maplibrePowerupMarkers[id].marker.remove(); delete maplibrePowerupMarkers[id]; }
+  });
+}
+
+// Same meter-to-degree approximation already used elsewhere in the game
+// (offsetPointNear, distMeters) — needed here since sabotage zones store a
+// center + radius in meters, not a ready-made polygon like the boundary has.
+function circlePolygonCoords(lat, lng, radiusMeters, points){
+  points = points || 32;
+  const coords = [];
+  for(let i = 0; i <= points; i++){
+    const angle = (i / points) * 2 * Math.PI;
+    const dLat = (radiusMeters * Math.cos(angle)) / 111320;
+    const dLng = (radiusMeters * Math.sin(angle)) / (111320 * Math.cos(lat * Math.PI / 180));
+    coords.push([lng + dLng, lat + dLat]);
+  }
+  return coords;
+}
+
+// Sabotage/Train Sabotage zones: reads the same lastKnownZones cache the 2D
+// map's refreshSabotageZones() keeps warm, drawn as a GeoJSON source (one
+// polygon per circular Sabotage zone, one line per Train Sabotage segment)
+// rather than individual layers, since MapLibre layers/sources are meant to
+// be added once and have their data swapped, not recreated per zone.
+function refreshMaplibreSabotageZones(){
+  if(!maplibreMap || !maplibreInitialized) return;
+  const features = [];
+  for(const [id, z] of Object.entries(lastKnownZones)){
+    const html = buildZonePopup(id, z);
+    if(z.isLineSabotage && REAL_TRACKS[z.lineKey]){
+      REAL_TRACKS[z.lineKey].segments.forEach(seg => {
+        features.push({
+          type: 'Feature', properties: { id, popupHtml: html },
+          geometry: { type: 'LineString', coordinates: seg.map(([lat, lng]) => [lng, lat]) }
+        });
+      });
+    } else {
+      features.push({
+        type: 'Feature', properties: { id, popupHtml: html },
+        geometry: { type: 'Polygon', coordinates: [circlePolygonCoords(z.lat, z.lng, z.radius)] }
+      });
+    }
+  }
+  const data = { type: 'FeatureCollection', features };
+  const src = maplibreMap.getSource('sabotage-zones');
+  if(src){
+    src.setData(data);
+  } else {
+    maplibreMap.addSource('sabotage-zones', { type: 'geojson', data });
+    maplibreMap.addLayer({
+      id: 'sabotage-zones-fill', type: 'fill', source: 'sabotage-zones',
+      filter: ['==', ['geometry-type'], 'Polygon'],
+      paint: { 'fill-color': '#d1352f', 'fill-opacity': 0.22 }
+    });
+    maplibreMap.addLayer({
+      id: 'sabotage-zones-line', type: 'line', source: 'sabotage-zones',
+      filter: ['==', ['geometry-type'], 'LineString'],
+      paint: { 'line-color': '#ff2b1f', 'line-width': 8, 'line-opacity': 0.85 }
+    });
+    const showZonePopup = (e) => {
+      new maplibregl.Popup({ offset: 8 }).setLngLat(e.lngLat).setHTML(e.features[0].properties.popupHtml).addTo(maplibreMap);
+    };
+    maplibreMap.on('click', 'sabotage-zones-fill', showZonePopup);
+    maplibreMap.on('click', 'sabotage-zones-line', showZonePopup);
+  }
 }
 
 window.addEventListener('resize', () => {
@@ -2227,7 +2353,13 @@ async function openMapLibreView(){
     }
     loadingEl.style.display = 'none';
     updateMaplibrePlayers();
-    maplibrePlayerRefreshTimer = setInterval(updateMaplibrePlayers, 4000);
+    refreshMaplibrePowerups();
+    refreshMaplibreSabotageZones();
+    maplibrePlayerRefreshTimer = setInterval(() => {
+      updateMaplibrePlayers();
+      refreshMaplibrePowerups();
+      refreshMaplibreSabotageZones();
+    }, 4000);
   }catch(e){
     console.error('3D map failed to load', e);
     loadingEl.textContent = "Couldn't load the 3D map — check your connection and try again.";
