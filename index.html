@@ -314,14 +314,14 @@
     78%{opacity:1;}
     100%{opacity:0;}
   }
-  #hud, #legend, #globalCountdown, #recenterBtn, #view3DBtn, #viewMaplibreBtn, #mapOptionsMenu{
+  #hud, #legend, #globalCountdown, #recenterBtn, #mapOptionsMenu{
     opacity:0; transition:opacity .6s ease;
   }
-  #hud.visible, #legend.visible, #globalCountdown.visible, #recenterBtn.visible, #view3DBtn.visible, #viewMaplibreBtn.visible, #mapOptionsMenu.visible{
+  #hud.visible, #legend.visible, #globalCountdown.visible, #recenterBtn.visible, #mapOptionsMenu.visible{
     opacity:1;
   }
   body.low-power #setup, body.low-power #hud, body.low-power #legend,
-  body.low-power #globalCountdown, body.low-power #recenterBtn, body.low-power #view3DBtn, body.low-power #viewMaplibreBtn, body.low-power #mapOptionsMenu,
+  body.low-power #globalCountdown, body.low-power #recenterBtn, body.low-power #mapOptionsMenu,
   body.low-power #transitionBlack{
     transition:none !important; animation:none !important;
   }
@@ -440,36 +440,6 @@
   #recenterBtn:active{transform:scale(0.92);}
 
   /* ========================================================== */
-  /* IN-GAME HUD — 3D VIEW BUTTON
-  /* ========================================================== */
-  #view3DBtn{
-    position:fixed; bottom:112px; right:12px; z-index:1000;
-    width:38px; height:38px; border-radius:50%; border:1px solid var(--dglass-border);
-    background:var(--glass-hud-bg);
-    font-size:16px; cursor:pointer;
-    box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
-    display:flex; align-items:center; justify-content:center;
-    transition:transform .15s;
-  }
-  #view3DBtn:hover{ background:rgba(255,255,255,.1); }
-  #view3DBtn:active{transform:scale(0.92);}
-
-  /* ========================================================== */
-  /* IN-GAME HUD — 3D MAP (MAPLIBRE) BUTTON
-  /* ========================================================== */
-  #viewMaplibreBtn{
-    position:fixed; bottom:160px; right:12px; z-index:1000;
-    width:38px; height:38px; border-radius:50%; border:1px solid var(--dglass-border);
-    background:var(--glass-hud-bg);
-    font-size:16px; cursor:pointer;
-    box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
-    display:flex; align-items:center; justify-content:center;
-    transition:transform .15s;
-  }
-  #viewMaplibreBtn:hover{ background:rgba(255,255,255,.1); }
-  #viewMaplibreBtn:active{transform:scale(0.92);}
-
-  /* ========================================================== */
   /* IN-GAME HUD — COLLAPSIBLE MAP OPTIONS MENU (style/trains/low power)
   /* ========================================================== */
   #mapOptionsMenu{
@@ -534,59 +504,15 @@
   .tag-btn:hover{background:var(--tagger-dark); box-shadow:4px 5px 0 var(--ink);}
   .tag-btn:active{background:var(--tagger-dark); transform:translate(2px,2px); box-shadow:0 0 0 var(--ink);}
   /* ========================================================== */
-  /* 3D BUILDINGS — CANVAS OVERLAY
+  /* "3D" MAP STYLE — MAPLIBRE GL, SWAPPED IN FOR #map (SAME SCREEN SPACE)
   /* ========================================================== */
-  .buildings-canvas{ pointer-events:none; } /* decorative only — never blocks map/marker clicks */
-  /* ========================================================== */
-  /* 3D VIEW — FULL-SCREEN THREE.JS OVERLAY (separate from the Leaflet map)
-  /* ========================================================== */
-  #threeDView{
-    position:fixed; inset:0; z-index:3000; background:#0a0e14;
-    overflow:hidden;
+  #maplibreContainer{
+    position:fixed; inset:0; z-index:1; background:#0a0e14; overflow:hidden;
   }
-  #threeDCanvas{ position:absolute; inset:0; }
-  #threeDCanvas canvas{ display:block; width:100%; height:100%; touch-action:none; }
-  #threeDLoading{
-    position:absolute; inset:0; z-index:1; display:flex; align-items:center; justify-content:center;
-    color:var(--text-hi); font-weight:700; font-size:14px; text-align:center; padding:0 30px;
-    background:rgba(10,14,20,.92);
-  }
-  #close3DBtn{
-    position:absolute; top:14px; right:14px; z-index:2;
-    border:1.5px solid var(--dglass-border); background:var(--glass-hud-bg); color:var(--text-hi);
-    border-radius:999px; padding:9px 16px; font-size:13px; font-weight:700; cursor:pointer;
-  }
-  #close3DBtn:hover{ background:rgba(255,255,255,.16); }
-  #threeDHint{
-    position:absolute; bottom:14px; left:50%; transform:translateX(-50%); z-index:2;
-    color:var(--text-lo); font-size:11px; background:var(--glass-hud-bg);
-    padding:6px 12px; border-radius:999px; border:1px solid var(--dglass-border);
-    pointer-events:none; white-space:nowrap; max-width:90vw; overflow:hidden; text-overflow:ellipsis;
-  }
-  /* ========================================================== */
-  /* 3D MAP — FULL-SCREEN MAPLIBRE GL OVERLAY (separate from the Leaflet map)
-  /* ========================================================== */
-  #maplibreView{
-    position:fixed; inset:0; z-index:3000; background:#0a0e14;
-    overflow:hidden;
-  }
-  #maplibreContainer{ position:absolute; inset:0; }
   #maplibreLoading{
-    position:absolute; inset:0; z-index:1; display:flex; align-items:center; justify-content:center;
+    position:fixed; inset:0; z-index:1001; display:flex; align-items:center; justify-content:center;
     color:var(--text-hi); font-weight:700; font-size:14px; text-align:center; padding:0 30px;
     background:rgba(10,14,20,.92);
-  }
-  #closeMaplibreBtn{
-    position:absolute; top:14px; right:14px; z-index:2;
-    border:1.5px solid var(--dglass-border); background:var(--glass-hud-bg); color:var(--text-hi);
-    border-radius:999px; padding:9px 16px; font-size:13px; font-weight:700; cursor:pointer;
-  }
-  #closeMaplibreBtn:hover{ background:rgba(255,255,255,.16); }
-  #maplibreHint{
-    position:absolute; bottom:14px; left:50%; transform:translateX(-50%); z-index:2;
-    color:var(--text-lo); font-size:11px; background:var(--glass-hud-bg);
-    padding:6px 12px; border-radius:999px; border:1px solid var(--dglass-border);
-    pointer-events:none; white-space:nowrap; max-width:90vw; overflow:hidden; text-overflow:ellipsis;
   }
   .maplibre-player-marker{
     width:14px; height:14px; border-radius:50%; border:2px solid #fff;
@@ -873,14 +799,6 @@
           <span>Marker &amp; powerup colors</span>
           <button class="toggle-switch" type="button" onclick="openColorsModal()">🎨 Colors</button>
         </div>
-        <div class="options-row">
-          <span>Preview the city in 3D</span>
-          <button class="toggle-switch" type="button" onclick="open3DView()">🏙️ 3D View</button>
-        </div>
-        <div class="options-row">
-          <span>Preview the city as a 3D map</span>
-          <button class="toggle-switch" type="button" onclick="openMapLibreView()">🗺️ 3D Map</button>
-        </div>
       </div>
 
       <label for="nameInput">Your name</label>
@@ -1003,29 +921,15 @@
   </div>
 </div>
 
-<!-- Real tilted-camera 3D view — a separate Three.js scene, independent of
-     the Leaflet map above (Leaflet is a flat 2D renderer and can't do
-     camera tilt/perspective). Three.js + OrbitControls are lazy-loaded
-     from CDN the first time this is opened, so players who never touch it
-     don't pay for it. -->
-<div id="threeDView" style="display:none;">
-  <div id="threeDCanvas"></div>
-  <div id="threeDLoading">Loading…</div>
-  <button id="close3DBtn" type="button" onclick="close3DView()">✕ Close 3D View</button>
-  <div id="threeDHint">Drag to rotate · scroll/pinch to zoom · right-click or two-finger drag to pan</div>
-</div>
-
-<!-- A THIRD, separate 3D option — MapLibre GL JS instead of a hand-built
-     Three.js scene. MapLibre has real fill-extrusion buildings and camera
-     pitch/rotate built in and battle-tested, so it should look and behave
-     better than either the flat 2D "Buildings" overlay or the custom
-     Three.js view above. Lazy-loaded from CDN on first open. -->
-<div id="maplibreView" style="display:none;">
-  <div id="maplibreContainer"></div>
-  <div id="maplibreLoading">Loading…</div>
-  <button id="closeMaplibreBtn" type="button" onclick="closeMapLibreView()">✕ Close 3D Map</button>
-  <div id="maplibreHint">Drag to pan · right-click/ctrl+drag or two-finger twist to rotate &amp; tilt · scroll/pinch to zoom</div>
-</div>
+<!-- "3D" map style — a genuinely different engine (MapLibre GL JS) swapped
+     in for the Leaflet map when that style is picked, occupying the same
+     screen space, switchable exactly like Clean/Standard. MapLibre has real
+     fill-extrusion buildings and camera pitch/rotate/pan/zoom built in, so
+     this gives real tilted 3D with full camera control. Lazy-loaded from
+     CDN the first time you switch to it, so Clean/Standard players never
+     pay for it. -->
+<div id="maplibreContainer" style="display:none;"></div>
+<div id="maplibreLoading" style="display:none;">Loading the 3D map…</div>
 
 <div id="map"></div>
 <div id="transitionBlack"></div>
@@ -1052,19 +956,15 @@
 </div>
 
 <button id="recenterBtn" style="display:none;" type="button" onclick="recenterOnMe()" title="Find me" aria-label="Recenter on my location">📍</button>
-<button id="view3DBtn" style="display:none;" type="button" onclick="open3DView()" title="3D View" aria-label="Open 3D view">🏙️</button>
-<button id="viewMaplibreBtn" style="display:none;" type="button" onclick="openMapLibreView()" title="3D Map" aria-label="Open 3D map">🗺️</button>
 
 <div id="mapOptionsMenu" style="display:none;">
   <button id="mapOptionsToggle" type="button" onclick="toggleMapOptionsMenu()" title="Map options" aria-label="Map options">⚙️</button>
   <div id="mapOptionsPanel">
     <button class="style-btn active" data-style="clean" type="button" onclick="setMapStyle('clean')">Clean</button>
     <button class="style-btn" data-style="standard" type="button" onclick="setMapStyle('standard')">Standard</button>
-    <button class="style-btn" type="button" onclick="openMapLibreView()">🗺️ 3D Map</button>
+    <button class="style-btn" data-style="3d" type="button" onclick="setMapStyle('3d')">3D</button>
     <span class="map-options-sep">|</span>
     <button class="style-btn" id="trainToggleBtn" type="button" onclick="toggleTrainLines()">🚆 Trains</button>
-    <span class="map-options-sep">|</span>
-    <button class="style-btn" id="buildingsToggleBtn" type="button" onclick="toggleBuildings3D()">🏢 Buildings</button>
     <span class="map-options-sep">|</span>
     <button class="style-btn" id="lowPowerBtn" type="button" onclick="toggleLowPower()">⚡ Low power</button>
     <span class="map-options-sep">|</span>
@@ -1273,8 +1173,9 @@ const REAL_TRACKS = {
 // this game's boundary, "Structure" footprints only, simplified to ~4-5m
 // tolerance, and delta-encoded as integers relative to CENTER to keep this
 // file small: [heightMeters, [[dxUnits,dyUnits],...]] where 1 unit = 1e-5deg
-// (~1.1m), decoded inline in redrawBuildings() below. Used by the optional
-// pseudo-3D Buildings layer (BUILDINGS_LAYER_SCALE etc., see toggleBuildings3D).
+// (~1.1m). Used by the "3D" map style (see buildBuildingsGeoJSON below),
+// which converts this to a GeoJSON FeatureCollection for MapLibre GL's
+// fill-extrusion layer.
 /* ------------------------------------------------------------ */
 /* 3D BUILDINGS — FOOTPRINT + HEIGHT DATA (compact-encoded, see comment above) */
 /* ------------------------------------------------------------ */
@@ -1552,19 +1453,15 @@ function startGame(){
   const legendEl = document.getElementById('legend');
   const countdownEl = document.getElementById('globalCountdown');
   const recenterEl = document.getElementById('recenterBtn');
-  const view3DEl = document.getElementById('view3DBtn');
-  const viewMaplibreEl = document.getElementById('viewMaplibreBtn');
   const mapOptionsMenuEl = document.getElementById('mapOptionsMenu');
   const revealHud = () => {
     hudEl.style.display = 'flex';
     legendEl.style.display = 'block';
     countdownEl.style.display = 'flex';
     recenterEl.style.display = 'flex';
-    view3DEl.style.display = 'flex';
-    viewMaplibreEl.style.display = 'flex';
     mapOptionsMenuEl.style.display = 'flex';
     requestAnimationFrame(() => {
-      [hudEl, legendEl, countdownEl, recenterEl, view3DEl, viewMaplibreEl, mapOptionsMenuEl].forEach(el => el.classList.add('visible'));
+      [hudEl, legendEl, countdownEl, recenterEl, mapOptionsMenuEl].forEach(el => el.classList.add('visible'));
     });
   };
 
@@ -1603,6 +1500,15 @@ function startGame(){
   setInterval(updateActivePowerStatusHud, 1000);
   setInterval(updateHuntHud, 4000); // reads live player positions — no need for per-second polling
   setInterval(adjustRadarMode, 1000); // catches expiry even without a new Firebase write
+  // These three are always running (like the Leaflet-side refresh loops
+  // above), same as Clean/Standard's own live-data handling — each is a
+  // no-op until the "3D" style has been switched to at least once, then it
+  // just keeps the 3D map's players/powerups/zones in sync in the
+  // background even while a different style is what's actually showing, so
+  // switching back to "3D" is instant instead of needing to catch up.
+  setInterval(updateMaplibrePlayers, 4000);
+  setInterval(refreshMaplibrePowerups, POWERUP_CHECK_INTERVAL);
+  setInterval(refreshMaplibreSabotageZones, POWERUP_CHECK_INTERVAL);
   db.ref('radarActiveUntil').on('value', snap => {
     radarState = snap.val() || { tagger: 0, runner: 0 };
     adjustRadarMode();
@@ -1681,395 +1587,44 @@ function recenterOnMe(){
 }
 
 function setMapStyle(style){
+  document.querySelectorAll('.style-btn[data-style]').forEach(b => b.classList.toggle('active', b.dataset.style === style));
+
+  if(style === '3d'){
+    document.getElementById('map').style.display = 'none';
+    document.getElementById('maplibreContainer').style.display = 'block';
+    showMapLibre();
+    return;
+  }
+
+  // Switching (back) to a Leaflet style: hide the 3D container, show
+  // Leaflet's own. invalidateSize() is required — Leaflet caches its
+  // container's pixel size and has no way to notice on its own that the
+  // container became visible again after being display:none.
+  document.getElementById('maplibreContainer').style.display = 'none';
+  document.getElementById('map').style.display = 'block';
+  map.invalidateSize();
+
   if(currentBaseLayer) map.removeLayer(currentBaseLayer);
   currentBaseLayer = BASE_LAYERS[style];
   currentBaseLayer.addTo(map);
-  document.querySelectorAll('.style-btn').forEach(b => b.classList.toggle('active', b.dataset.style === style));
 }
 
 let trainLayer = null;
-let buildingsOn = false;
-let buildingsCanvas = null, buildingsCtx = null;
-const BUILDINGS_MIN_ZOOM = 15;   // don't bother rendering tiny unreadable shapes when zoomed out
-const BUILDINGS_HEIGHT_SCALE = 0.85; // slight reduction from true scale so tall towers don't dominate the screen
-/* ------------------------------------------------------------ */
-/* 3D BUILDINGS — PSEUDO-3D EXTRUSION LAYER (raw canvas, not Leaflet layers) */
-/* ------------------------------------------------------------ */
-// Real per-wall/per-roof 3D (tilt, true perspective) needs a WebGL map
-// engine (e.g. MapLibre GL) — Leaflet is a flat 2D renderer and can't do
-// that. This fakes a "2.5D" look instead: each footprint gets a "roof"
-// polygon lifted straight up by an amount proportional to its real height,
-// with wall quads filling the gap — a common flat-map skyline trick, and
-// good enough to read as a 3D-ish city at a glance.
-//
-// With ~23k buildings, creating one Leaflet layer object per wall/roof
-// would mean hundreds of thousands of JS objects — instead this draws
-// directly onto one plain <canvas> dropped in the map's overlay pane,
-// positioned/redrawn manually the same way Leaflet's own canvas renderer
-// does (see trainCanvasRenderer above for the same "canvas beats many
-// individual layers" reasoning applied to the train lines).
-function initBuildingsCanvas(){
-  if(buildingsCanvas) return;
-  buildingsCanvas = L.DomUtil.create('canvas', 'buildings-canvas', map.getPanes().overlayPane);
-  buildingsCtx = buildingsCanvas.getContext('2d');
-  map.on('moveend', redrawBuildings);
-  map.on('zoomend', redrawBuildings);
-  map.on('resize', redrawBuildings);
-}
 
-function redrawBuildings(){
-  if(!buildingsCanvas) return;
-  const size = map.getSize();
-  const topLeft = map.containerPointToLayerPoint([0, 0]);
-  L.DomUtil.setPosition(buildingsCanvas, topLeft);
-  buildingsCanvas.width = size.x;
-  buildingsCanvas.height = size.y;
-  if(!buildingsOn || document.body.classList.contains('low-power')) return; // width/height reset above already cleared it
-
-  const zoom = map.getZoom();
-  if(zoom < BUILDINGS_MIN_ZOOM) return; // too tiny/unreadable to bother drawing
-
-  // Cheap viewport cull directly on the raw encoded integers, before doing
-  // any actual lat/lng or pixel-projection work, so off-screen buildings
-  // (the vast majority at any normal zoom level) cost almost nothing.
-  const b = map.getBounds();
-  const dxMin = (b.getWest() - CENTER[1]) * BUILDINGS_SCALE;
-  const dxMax = (b.getEast() - CENTER[1]) * BUILDINGS_SCALE;
-  const dyMin = (b.getSouth() - CENTER[0]) * BUILDINGS_SCALE;
-  const dyMax = (b.getNorth() - CENTER[0]) * BUILDINGS_SCALE;
-
-  const centerLat = map.getCenter().lat;
-  const metersPerPixel = 156543.03392 * Math.cos(centerLat * Math.PI / 180) / Math.pow(2, zoom);
-  const liftPerMeter = (1 / metersPerPixel) * BUILDINGS_HEIGHT_SCALE;
-
-  const ctx = buildingsCtx;
-  ctx.lineJoin = 'round';
-
-  for(const [height, ring] of BUILDINGS_DATA){
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    for(const [dx, dy] of ring){
-      if(dx < minX) minX = dx; if(dx > maxX) maxX = dx;
-      if(dy < minY) minY = dy; if(dy > maxY) maxY = dy;
-    }
-    if(maxX < dxMin || minX > dxMax || maxY < dyMin || minY > dyMax) continue;
-
-    const pts = ring.map(([dx, dy]) => {
-      const latlng = [CENTER[0] + dy / BUILDINGS_SCALE, CENTER[1] + dx / BUILDINGS_SCALE];
-      return map.latLngToLayerPoint(latlng).subtract(topLeft);
-    });
-    const lift = height * liftPerMeter;
-
-    // Walls: one quad per footprint edge, roof shifted straight up.
-    ctx.fillStyle = 'rgba(110,102,92,.55)';
-    for(let i = 0; i < pts.length; i++){
-      const a = pts[i], c = pts[(i + 1) % pts.length];
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(c.x, c.y);
-      ctx.lineTo(c.x, c.y - lift);
-      ctx.lineTo(a.x, a.y - lift);
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    // Roof on top, so overdrawn/hidden wall edges never peek through.
-    ctx.beginPath();
-    pts.forEach((p, i) => {
-      if(i === 0) ctx.moveTo(p.x, p.y - lift); else ctx.lineTo(p.x, p.y - lift);
-    });
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(172,163,150,.88)';
-    ctx.strokeStyle = 'rgba(88,80,70,.9)';
-    ctx.lineWidth = 1;
-    ctx.fill();
-    ctx.stroke();
-  }
-}
-
-function toggleBuildings3D(){
-  const btn = document.getElementById('buildingsToggleBtn');
-  buildingsOn = !buildingsOn;
-  btn.classList.toggle('active', buildingsOn);
-  initBuildingsCanvas();
-  redrawBuildings();
-}
-
-/* ============================================================ */
-/*         REAL 3D VIEW — SEPARATE THREE.JS SCENE                */
-/* ============================================================ */
-// This is a genuinely different rendering engine from the Leaflet map
-// above, not a mode of it — Leaflet is a flat 2D renderer with no concept
-// of camera tilt/perspective, so true "look around" 3D needs a real WebGL
-// scene. Three.js + OrbitControls are lazy-loaded from CDN only the first
-// time this view is opened, so the base game never pays for them.
-let threeScriptsPromise = null;
-function loadScriptTag(src){
-  return new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = src;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error('failed to load ' + src));
-    document.head.appendChild(s);
-  });
-}
-function ensureThreeLoaded(){
-  if(!threeScriptsPromise){
-    threeScriptsPromise = loadScriptTag('https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js')
-      .then(() => loadScriptTag('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js'));
-  }
-  return threeScriptsPromise;
-}
-
-let threeScene, threeCamera, threeRenderer, threeControls;
-let threeInitialized = false;
-let threeAnimHandle = null;
-let threePlayerRefreshTimer = null;
-const threePlayerMeshes = {}; // id -> mesh
-let threeMeMesh = null;
-
-// Same flat local-meters approximation the rest of the game already uses
-// (see distMeters/offsetPointNear) — X = east, Z = south, Y = up, so a
-// camera starting south of a point and looking north sees it "ahead".
-function geoToWorld(lat, lng){
-  const x = (lng - CENTER[1]) * 111320 * Math.cos(CENTER[0] * Math.PI / 180);
-  const z = -(lat - CENTER[0]) * 111320;
-  return { x, z };
-}
-
-// Builds ALL buildings as one single merged BufferGeometry (one draw call)
-// instead of ~23k individual meshes, which would tank frame rate. Each
-// building is authored directly in world space (no THREE.Shape/Extrude
-// step, which needs polygon triangulation per building): a quad per
-// footprint edge for the walls, plus a simple fan triangulation for the
-// flat roof (fine for the mostly-convex simplified footprints; occasional
-// minor artifacts on a concave one are an acceptable trade for speed).
-function buildBuildingsGeometry(){
-  const positions = [];
-  const normals = [];
-  const indices = [];
-  let vi = 0;
-
-  for(const [height, ring] of BUILDINGS_DATA){
-    const n = ring.length;
-    if(n < 3) continue;
-    const pts = ring.map(([dx, dy]) => geoToWorld(CENTER[0] + dy / BUILDINGS_SCALE, CENTER[1] + dx / BUILDINGS_SCALE));
-
-    for(let i = 0; i < n; i++){
-      const a = pts[i], b = pts[(i + 1) % n];
-      const edgeX = b.x - a.x, edgeZ = b.z - a.z;
-      const len = Math.hypot(edgeX, edgeZ) || 1;
-      const nx = edgeZ / len, nz = -edgeX / len; // outward-ish normal for this wall segment
-      const base = vi;
-      positions.push(a.x, 0, a.z,  b.x, 0, b.z,  b.x, height, b.z,  a.x, height, a.z);
-      for(let k = 0; k < 4; k++) normals.push(nx, 0, nz);
-      indices.push(base, base + 1, base + 2,  base, base + 2, base + 3);
-      vi += 4;
-    }
-
-    const roofBase = vi;
-    for(let i = 0; i < n; i++){
-      positions.push(pts[i].x, height, pts[i].z);
-      normals.push(0, 1, 0);
-      vi++;
-    }
-    for(let i = 1; i < n - 1; i++){
-      indices.push(roofBase, roofBase + i, roofBase + i + 1);
-    }
-  }
-
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
-  geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(normals), 3));
-  geo.setIndex(new THREE.BufferAttribute(vi > 65535 ? new Uint32Array(indices) : new Uint16Array(indices), 1));
-  return geo;
-}
-
-function init3DScene(){
-  const container = document.getElementById('threeDCanvas');
-  const width = container.clientWidth, height = container.clientHeight;
-
-  threeScene = new THREE.Scene();
-  threeScene.background = new THREE.Color(0xbfd7e8);
-  threeScene.fog = new THREE.Fog(0xbfd7e8, 900, 2600);
-
-  threeCamera = new THREE.PerspectiveCamera(60, width / height, 1, 20000);
-
-  threeRenderer = new THREE.WebGLRenderer({ antialias: true });
-  threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  threeRenderer.setSize(width, height);
-  container.innerHTML = '';
-  container.appendChild(threeRenderer.domElement);
-
-  threeScene.add(new THREE.AmbientLight(0xffffff, 0.6));
-  const sun = new THREE.DirectionalLight(0xffffff, 0.75);
-  sun.position.set(600, 900, 300);
-  threeScene.add(sun);
-
-  const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(7000, 7000),
-    new THREE.MeshLambertMaterial({ color: 0xe9e4d8 })
-  );
-  ground.rotation.x = -Math.PI / 2;
-  threeScene.add(ground);
-
-  // Game boundary, drawn as a thin line at ground level.
-  const boundaryPts = BOUNDARY.map(([lat, lng]) => {
-    const w = geoToWorld(lat, lng);
-    return new THREE.Vector3(w.x, 1, w.z);
-  });
-  boundaryPts.push(boundaryPts[0].clone());
-  const boundaryGeo = new THREE.BufferGeometry().setFromPoints(boundaryPts);
-  threeScene.add(new THREE.Line(boundaryGeo, new THREE.LineBasicMaterial({ color: 0xd1352f })));
-
-  // Buildings — single mesh, double-sided so it renders correctly even if
-  // a particular building's winding order ends up flipped by this coordinate
-  // setup (cheap insurance against invisible walls, given this can't be
-  // interactively test-rendered while writing it).
-  const buildingsMesh = new THREE.Mesh(
-    buildBuildingsGeometry(),
-    new THREE.MeshLambertMaterial({ color: 0xb9ae9c, side: THREE.DoubleSide })
-  );
-  threeScene.add(buildingsMesh);
-
-  threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
-  threeControls.maxPolarAngle = Math.PI / 2 - 0.02; // stop the camera going under the ground
-  threeControls.minDistance = 20;
-  threeControls.maxDistance = 3000;
-
-  // Start looking at wherever the player actually is, if we know that yet
-  // (works whether this is opened pre-game from the homepage or mid-game).
-  const startAt = myCurrentPos ? geoToWorld(myCurrentPos.lat, myCurrentPos.lng) : { x: 0, z: 0 };
-  threeControls.target.set(startAt.x, 0, startAt.z);
-  threeCamera.position.set(startAt.x, 220, startAt.z + 320);
-  threeControls.update();
-
-  threeInitialized = true;
-}
-
-function start3DLoop(){
-  const tick = () => {
-    threeControls.update();
-    threeRenderer.render(threeScene, threeCamera);
-    threeAnimHandle = requestAnimationFrame(tick);
-  };
-  tick();
-}
-function stop3DLoop(){
-  if(threeAnimHandle){ cancelAnimationFrame(threeAnimHandle); threeAnimHandle = null; }
-}
-
-// Mirrors refreshOthers()'s own visibility rules (real roles for taggers,
-// anonymized dots for runners, invisibility hides the player) so the 3D
-// view never leaks more than the 2D map already shows.
-async function update3DPlayers(){
-  if(!threeInitialized) return;
-  try{
-    const snap = await db.ref('players').once('value');
-    const all = snap.val() || {};
-    const now = Date.now();
-    const seen = new Set();
-    const iAmTagger = myRole === 'tagger';
-
-    for(const [id, data] of Object.entries(all)){
-      if(id === myId || !data || data.isGhost) continue;
-      if(now - (data.ts || 0) > STALE_AFTER) continue;
-      if(data.activePower && data.activePower.type === 'invisibility' && data.activePower.expiresAt > now) continue;
-
-      seen.add(id);
-      const w = geoToWorld(data.lat, data.lng);
-      const color = iAmTagger ? (data.role === 'tagger' ? 0xe0332b : 0x2277c4) : 0x6b6f76;
-      if(threePlayerMeshes[id]){
-        threePlayerMeshes[id].position.set(w.x, 8, w.z);
-        threePlayerMeshes[id].material.color.setHex(color);
-      } else {
-        const mesh = new THREE.Mesh(new THREE.ConeGeometry(4, 14, 8), new THREE.MeshLambertMaterial({ color }));
-        mesh.position.set(w.x, 8, w.z);
-        threeScene.add(mesh);
-        threePlayerMeshes[id] = mesh;
-      }
-    }
-
-    Object.keys(threePlayerMeshes).forEach(id => {
-      if(!seen.has(id)){
-        threeScene.remove(threePlayerMeshes[id]);
-        threePlayerMeshes[id].geometry.dispose();
-        threePlayerMeshes[id].material.dispose();
-        delete threePlayerMeshes[id];
-      }
-    });
-
-    if(myCurrentPos){
-      const w = geoToWorld(myCurrentPos.lat, myCurrentPos.lng);
-      if(!threeMeMesh){
-        threeMeMesh = new THREE.Mesh(new THREE.ConeGeometry(5, 16, 8), new THREE.MeshLambertMaterial({ color: 0xf2a900 }));
-        threeScene.add(threeMeMesh);
-      }
-      threeMeMesh.position.set(w.x, 8, w.z);
-    }
-  }catch(e){ console.error('3D player update failed', e); }
-}
-
-function on3DResize(){
-  if(!threeRenderer || document.getElementById('threeDView').style.display === 'none') return;
-  const c = document.getElementById('threeDCanvas');
-  threeCamera.aspect = c.clientWidth / c.clientHeight;
-  threeCamera.updateProjectionMatrix();
-  threeRenderer.setSize(c.clientWidth, c.clientHeight);
-}
-window.addEventListener('resize', on3DResize);
-
-async function open3DView(){
-  const overlay = document.getElementById('threeDView');
-  const loadingEl = document.getElementById('threeDLoading');
-  overlay.style.display = 'block';
-  loadingEl.style.display = 'flex';
-  loadingEl.textContent = 'Loading the 3D engine…';
-  try{
-    await ensureThreeLoaded();
-    if(!threeInitialized){
-      loadingEl.textContent = 'Building the city — this can take a moment…';
-      await new Promise(r => setTimeout(r, 30)); // let that message paint before the heavy synchronous build below
-      init3DScene();
-    } else {
-      on3DResize();
-      // Re-center on wherever the player is NOW, not just where they were
-      // the first time this view was ever opened.
-      if(myCurrentPos){
-        const w = geoToWorld(myCurrentPos.lat, myCurrentPos.lng);
-        threeControls.target.set(w.x, 0, w.z);
-        threeCamera.position.set(w.x, 220, w.z + 320);
-        threeControls.update();
-      }
-    }
-    loadingEl.style.display = 'none';
-    start3DLoop();
-    update3DPlayers();
-    threePlayerRefreshTimer = setInterval(update3DPlayers, 4000);
-  }catch(e){
-    console.error('3D view failed to load', e);
-    loadingEl.textContent = "Couldn't load the 3D view — check your connection and try again.";
-  }
-}
-
-function close3DView(){
-  document.getElementById('threeDView').style.display = 'none';
-  stop3DLoop();
-  if(threePlayerRefreshTimer){ clearInterval(threePlayerRefreshTimer); threePlayerRefreshTimer = null; }
-}
 
 /* ============================================================ */
 /*   3D MAP — MAPLIBRE GL JS (third, separate 3D option)         */
 /* ============================================================ */
-// Unlike the hand-built Three.js view above, MapLibre GL JS has real
-// fill-extrusion buildings and camera pitch/rotate/pan/zoom built in and
-// battle-tested — nothing here is hand-rolled geometry or camera math, so
-// it should be both more reliable and better-looking. Lazy-loaded from CDN
-// only on first open, same reasoning as the Three.js view.
+// MapLibre GL JS has real fill-extrusion buildings and camera
+// pitch/rotate/pan/zoom built in and battle-tested — nothing here is
+// hand-rolled geometry or camera math. This is a genuinely different
+// rendering engine from the Leaflet map, swapped in for it (same screen
+// space) when the "3D" style is selected — see setMapStyle(). Lazy-loaded
+// from CDN only the first time someone switches to "3D".
 let maplibreMap = null;
 let maplibreInitialized = false;
 const maplibrePlayerMarkers = {}; // id -> maplibregl.Marker
 let maplibreMeMarker = null;
-let maplibrePlayerRefreshTimer = null;
 let maplibreScriptsPromise = null;
 
 function ensureMaplibreLoaded(){
@@ -2165,9 +1720,9 @@ function initMapLibreScene(){
   });
 }
 
-// Mirrors the same visibility rules as the Leaflet map's refreshOthers()
-// and the Three.js view's update3DPlayers() — taggers see real roles,
-// runners see anonymized gray, invisibility hides the player entirely.
+// Mirrors the same visibility rules as the Leaflet map's refreshOthers() —
+// taggers see real roles, runners see anonymized gray, invisibility hides
+// the player entirely.
 // Popups reuse the exact same tag-btn markup/onclick as the 2D map, so
 // tagging someone from here calls the very same tagPlayer() function.
 async function updateMaplibrePlayers(){
@@ -2333,13 +1888,11 @@ function refreshMaplibreSabotageZones(){
 }
 
 window.addEventListener('resize', () => {
-  if(maplibreMap && document.getElementById('maplibreView').style.display !== 'none') maplibreMap.resize();
+  if(maplibreMap && document.getElementById('maplibreContainer').style.display !== 'none') maplibreMap.resize();
 });
 
-async function openMapLibreView(){
-  const overlay = document.getElementById('maplibreView');
+async function showMapLibre(){
   const loadingEl = document.getElementById('maplibreLoading');
-  overlay.style.display = 'block';
   loadingEl.style.display = 'flex';
   loadingEl.textContent = 'Loading the 3D map…';
   try{
@@ -2355,20 +1908,10 @@ async function openMapLibreView(){
     updateMaplibrePlayers();
     refreshMaplibrePowerups();
     refreshMaplibreSabotageZones();
-    maplibrePlayerRefreshTimer = setInterval(() => {
-      updateMaplibrePlayers();
-      refreshMaplibrePowerups();
-      refreshMaplibreSabotageZones();
-    }, 4000);
   }catch(e){
     console.error('3D map failed to load', e);
     loadingEl.textContent = "Couldn't load the 3D map — check your connection and try again.";
   }
-}
-
-function closeMapLibreView(){
-  document.getElementById('maplibreView').style.display = 'none';
-  if(maplibrePlayerRefreshTimer){ clearInterval(maplibrePlayerRefreshTimer); maplibrePlayerRefreshTimer = null; }
 }
 
 /* ------------------------------------------------------------ */
@@ -2487,7 +2030,6 @@ function toggleLowPower(){
     setupBtn.classList.toggle('active', on);
     setupBtn.textContent = on ? 'On' : 'Off';
   }
-  if(buildingsOn) redrawBuildings(); // immediately clear (or restore) the buildings canvas rather than waiting for the next map move
 }
 
 /* ------------------------------------------------------------ */
