@@ -1657,65 +1657,103 @@ function buildBuildingsGeoJSON(){
   return { type: 'FeatureCollection', features };
 }
 
+function browserSupportsWebGL(){
+  try{
+    const canvas = document.createElement('canvas');
+    return !!(window.WebGLRenderingContext &&
+      (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+  }catch(e){
+    return false;
+  }
+}
+
 function initMapLibreScene(){
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    if(!browserSupportsWebGL()){
+      reject(new Error('This browser/device doesn\'t appear to support WebGL, which the 3D map needs.'));
+      return;
+    }
+
     const startPos = myCurrentPos || { lat: CENTER[0], lng: CENTER[1] };
-    maplibreMap = new maplibregl.Map({
-      container: 'maplibreContainer',
-      style: {
-        version: 8,
-        sources: {
-          carto: {
-            type: 'raster',
-            tiles: [
-              'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_2m47_2_b675327611fc7e5c9af00cef',
-              'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_2m47_2_b675327611fc7e5c9af00cef',
-              'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_2m47_2_b675327611fc7e5c9af00cef'
-            ],
-            tileSize: 256,
-            attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
-          }
+    try{
+      maplibreMap = new maplibregl.Map({
+        container: 'maplibreContainer',
+        style: {
+          version: 8,
+          sources: {
+            carto: {
+              type: 'raster',
+              tiles: [
+                'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_2m47_2_b675327611fc7e5c9af00cef',
+                'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_2m47_2_b675327611fc7e5c9af00cef',
+                'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_2m47_2_b675327611fc7e5c9af00cef'
+              ],
+              tileSize: 256,
+              attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+            }
+          },
+          layers: [{ id: 'carto-base', type: 'raster', source: 'carto' }]
         },
-        layers: [{ id: 'carto-base', type: 'raster', source: 'carto' }]
-      },
-      center: [startPos.lng, startPos.lat],
-      zoom: 16,
-      pitch: 60,
-      bearing: -20,
-      maxPitch: 75,
-      antialias: true
+        center: [startPos.lng, startPos.lat],
+        zoom: 16,
+        pitch: 60,
+        bearing: -20,
+        maxPitch: 75,
+        antialias: true
+      });
+    }catch(err){
+      reject(err); // e.g. WebGL context creation failed for some other reason
+      return;
+    }
+
+    // If something goes wrong with the style/tiles/etc. and 'load' never
+    // fires, don't hang forever — surface it after a reasonable wait.
+    const initTimeout = setTimeout(() => {
+      reject(new Error('Timed out waiting for the map to finish loading (the "load" event never fired).'));
+    }, 15000);
+
+    maplibreMap.on('error', (e) => {
+      // MapLibre reports things like failed tile/style requests through this
+      // event rather than throwing — log it so it's visible even when it
+      // doesn't stop 'load' from eventually firing.
+      console.error('MapLibre error event:', e && e.error ? e.error : e);
     });
 
     maplibreMap.on('load', () => {
-      maplibreMap.addSource('boundary', {
-        type: 'geojson',
-        data: {
-          type: 'Feature',
-          properties: {},
-          geometry: {
-            type: 'LineString',
-            coordinates: BOUNDARY.map(([lat, lng]) => [lng, lat]).concat([[BOUNDARY[0][1], BOUNDARY[0][0]]])
+      clearTimeout(initTimeout);
+      try{
+        maplibreMap.addSource('boundary', {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+              type: 'LineString',
+              coordinates: BOUNDARY.map(([lat, lng]) => [lng, lat]).concat([[BOUNDARY[0][1], BOUNDARY[0][0]]])
+            }
           }
-        }
-      });
-      maplibreMap.addLayer({
-        id: 'boundary-line', type: 'line', source: 'boundary',
-        paint: { 'line-color': '#d1352f', 'line-width': 2 }
-      });
+        });
+        maplibreMap.addLayer({
+          id: 'boundary-line', type: 'line', source: 'boundary',
+          paint: { 'line-color': '#d1352f', 'line-width': 2 }
+        });
 
-      maplibreMap.addSource('buildings', { type: 'geojson', data: buildBuildingsGeoJSON() });
-      maplibreMap.addLayer({
-        id: 'buildings-3d', type: 'fill-extrusion', source: 'buildings',
-        paint: {
-          'fill-extrusion-color': '#b9ae9c',
-          'fill-extrusion-height': ['get', 'height'],
-          'fill-extrusion-base': 0,
-          'fill-extrusion-opacity': 0.92
-        }
-      });
+        maplibreMap.addSource('buildings', { type: 'geojson', data: buildBuildingsGeoJSON() });
+        maplibreMap.addLayer({
+          id: 'buildings-3d', type: 'fill-extrusion', source: 'buildings',
+          paint: {
+            'fill-extrusion-color': '#b9ae9c',
+            'fill-extrusion-height': ['get', 'height'],
+            'fill-extrusion-base': 0,
+            'fill-extrusion-opacity': 0.92
+          }
+        });
 
-      maplibreInitialized = true;
-      resolve();
+        maplibreInitialized = true;
+        resolve();
+      }catch(err){
+        reject(err); // e.g. a bug in buildBuildingsGeoJSON() or an invalid layer spec
+      }
     });
   });
 }
