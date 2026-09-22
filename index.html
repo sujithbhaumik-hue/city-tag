@@ -509,11 +509,6 @@
   #maplibreContainer{
     position:fixed; inset:0; z-index:1; background:#0a0e14; overflow:hidden;
   }
-  #maplibreLoading{
-    position:fixed; inset:0; z-index:1001; display:flex; align-items:center; justify-content:center;
-    color:var(--text-hi); font-weight:700; font-size:14px; text-align:center; padding:0 30px;
-    background:rgba(10,14,20,.92);
-  }
   .maplibre-player-marker{
     width:14px; height:14px; border-radius:50%; border:2px solid #fff;
     box-shadow:0 0 0 1px rgba(0,0,0,.3);
@@ -925,11 +920,11 @@
      in for the Leaflet map when that style is picked, occupying the same
      screen space, switchable exactly like Clean/Standard. MapLibre has real
      fill-extrusion buildings and camera pitch/rotate/pan/zoom built in, so
-     this gives real tilted 3D with full camera control. Lazy-loaded from
-     CDN the first time you switch to it, so Clean/Standard players never
-     pay for it. -->
+     this gives real tilted 3D with full camera control. Preloaded quietly
+     in the background as soon as a game starts (see preloadMapLibre) so
+     switching to it feels as instant as Clean/Standard, not like opening
+     something separate. -->
 <div id="maplibreContainer" style="display:none;"></div>
-<div id="maplibreLoading" style="display:none;">Loading the 3D map…</div>
 
 <div id="map"></div>
 <div id="transitionBlack"></div>
@@ -1491,6 +1486,7 @@ function startGame(){
   updateLegendForRole();
 
   initMap();
+  preloadMapLibre(); // background download+build, not awaited — see its own comment for why
   watchLocation();
   scheduleNextPush();
   setInterval(refreshOthers, POLL_INTERVAL);
@@ -1929,26 +1925,37 @@ window.addEventListener('resize', () => {
   if(maplibreMap && document.getElementById('maplibreContainer').style.display !== 'none') maplibreMap.resize();
 });
 
+// Preloaded eagerly in the background from startGame() (see
+// preloadMapLibre() below) — by the time anyone actually clicks "3D",
+// the library + scene are typically already built, so this just shows
+// what's already there. No loading UI: it's supposed to feel as instant
+// as switching to Clean/Standard, not like opening something separate.
 async function showMapLibre(){
-  const loadingEl = document.getElementById('maplibreLoading');
-  loadingEl.style.display = 'flex';
-  loadingEl.textContent = 'Loading the 3D map…';
   try{
     await ensureMaplibreLoaded();
-    if(!maplibreMap){
-      loadingEl.textContent = 'Building the 3D map — this can take a moment…';
-      await initMapLibreScene();
-    } else {
-      maplibreMap.resize();
-      if(myCurrentPos) maplibreMap.jumpTo({ center: [myCurrentPos.lng, myCurrentPos.lat] });
-    }
-    loadingEl.style.display = 'none';
+    if(!maplibreMap) await initMapLibreScene();
+    maplibreMap.resize(); // container was display:none a moment ago — its cached size needs refreshing
     updateMaplibrePlayers();
     refreshMaplibrePowerups();
     refreshMaplibreSabotageZones();
   }catch(e){
     console.error('3D map failed to load', e);
-    loadingEl.textContent = "Couldn't load the 3D map — check your connection and try again.";
+    showBanner("Couldn't load the 3D map — " + (e && e.message ? e.message : 'unknown error'));
+    setMapStyle('clean'); // don't leave the player stuck on a broken/blank view
+  }
+}
+
+// Kicks off the library download + full scene/building construction the
+// moment a game starts, in the background, well before anyone could have
+// clicked "3D" yet — this is what makes the switch feel instant rather
+// than needing its own loading state. Safe to build in a display:none
+// container; showMapLibre() calls resize() once it's actually shown.
+async function preloadMapLibre(){
+  try{
+    await ensureMaplibreLoaded();
+    if(!maplibreMap) await initMapLibreScene();
+  }catch(e){
+    console.error('MapLibre preload failed (will retry on first "3D" click)', e);
   }
 }
 
