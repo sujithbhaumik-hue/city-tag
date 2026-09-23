@@ -223,6 +223,27 @@
   .options-row input[type=color]::-webkit-color-swatch{ border:none; border-radius:5px; }
   .options-row input[type=color]::-moz-color-swatch{ border:none; border-radius:5px; }
   /* ========================================================== */
+  /* SETUP SCREEN — HOME / ROOM "PAGES"
+  /* ========================================================== */
+  #homePage, #roomPage{
+    animation:ui-modal-fade .18s ease-out;
+  }
+  #continueToRoomBtn{
+    width:100%; margin-top:14px; padding:13px; border:1.5px solid var(--dglass-border); border-radius:999px;
+    background:rgba(255,255,255,.06); color:var(--text-hi); font-weight:800; font-size:14px; cursor:pointer;
+    transition:transform .15s, border-color .15s;
+    outline:none;
+  }
+  #continueToRoomBtn:hover{background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.35);}
+  #backToHomeBtn{
+    border:1.5px solid var(--dglass-border); background:rgba(255,255,255,.05);
+    border-radius:999px; padding:7px 13px; margin-bottom:12px;
+    font-size:12px; font-weight:700; color:var(--text-lo); cursor:pointer;
+    transition:transform .15s, border-color .15s;
+    outline:none;
+  }
+  #backToHomeBtn:hover{background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.35); color:var(--text-hi);}
+  /* ========================================================== */
   /* SETUP SCREEN — ROOM / LOBBY
   /* ========================================================== */
   #createRoomBtn, #joinRoomBtn, #leaveRoomBtn, #copyRoomCodeBtn{
@@ -863,7 +884,8 @@
         <span id="accountName"></span>
         <button id="signOutBtn" type="button">Sign out</button>
       </div>
-      <div id="gameSetupPanel">
+
+      <div id="homePage">
         <button id="statsBtn" type="button">📊 My stats</button>
         <button id="rulesBtn" type="button">📖 Powers &amp; Rules</button>
         <button id="setupOptionsBtn" type="button" onclick="toggleSetupOptionsMenu()">⚙️ Options</button>
@@ -878,6 +900,12 @@
             <button class="toggle-switch" type="button" onclick="openColorsModal()">🎨 Colors</button>
           </div>
         </div>
+
+        <button id="continueToRoomBtn" type="button">Continue →</button>
+      </div>
+
+      <div id="roomPage" style="display:none;">
+        <button id="backToHomeBtn" type="button">← Back</button>
 
         <label for="nameInput">Your name</label>
         <input id="nameInput" type="text" placeholder="e.g. Jess" maxlength="20" autocomplete="off">
@@ -898,50 +926,50 @@
             <small>Players look identical — guess who's safe</small>
           </button>
         </div>
-      </div>
 
-      <div id="roomSection">
-        <div id="roomJoinPanel">
-          <label>Room code</label>
-          <div id="roomCodeRow">
-            <input id="roomCodeInput" type="text" placeholder="e.g. K7QX" maxlength="6" autocomplete="off">
-            <button id="joinRoomBtn" type="button">Join</button>
-          </div>
-          <button id="createRoomBtn" type="button">➕ Create a new room</button>
-          <div id="roomError"></div>
-        </div>
-
-        <div id="roomLobbyPanel" style="display:none;">
-          <div id="roomCodeDisplay">
-            <span id="roomCodeText"></span>
-            <button id="copyRoomCodeBtn" type="button">📋 Copy</button>
-          </div>
-          <div id="lobbyPlayerList"></div>
-
-          <div id="hostControls" style="display:none;">
-            <button id="advancedSettingsBtn" type="button" onclick="toggleAdvancedSettings()">⚙️ Advanced settings</button>
-            <div id="advancedSettingsPanel">
-              <label>Enabled powerups</label>
-              <div id="powerupToggleList"></div>
-              <label for="roomDurationInput">Round length</label>
-              <select id="roomDurationInput">
-                <option value="0">No limit</option>
-                <option value="15">15 minutes</option>
-                <option value="30" selected>30 minutes</option>
-                <option value="45">45 minutes</option>
-                <option value="60">60 minutes</option>
-                <option value="90">90 minutes</option>
-              </select>
+        <div id="roomSection">
+          <div id="roomJoinPanel">
+            <label>Room code</label>
+            <div id="roomCodeRow">
+              <input id="roomCodeInput" type="text" placeholder="e.g. K7QX" maxlength="6" autocomplete="off">
+              <button id="joinRoomBtn" type="button">Join</button>
             </div>
-            <button id="lockRoomBtn" type="button">🚀 Start Game</button>
+            <button id="createRoomBtn" type="button">➕ Create a new room</button>
+            <div id="roomError"></div>
           </div>
-          <p id="waitingForHostMsg" class="sub" style="display:none; margin-top:10px; text-transform:none; font-weight:500; letter-spacing:0;">Waiting for the host to start the game…</p>
 
-          <button id="leaveRoomBtn" type="button">Leave room</button>
+          <div id="roomLobbyPanel" style="display:none;">
+            <div id="roomCodeDisplay">
+              <span id="roomCodeText"></span>
+              <button id="copyRoomCodeBtn" type="button">📋 Copy</button>
+            </div>
+            <div id="lobbyPlayerList"></div>
+
+            <div id="hostControls" style="display:none;">
+              <button id="advancedSettingsBtn" type="button" onclick="toggleAdvancedSettings()">⚙️ Advanced settings</button>
+              <div id="advancedSettingsPanel">
+                <label>Enabled powerups</label>
+                <div id="powerupToggleList"></div>
+                <label for="roomDurationInput">Round length</label>
+                <select id="roomDurationInput">
+                  <option value="0">No limit</option>
+                  <option value="15">15 minutes</option>
+                  <option value="30" selected>30 minutes</option>
+                  <option value="45">45 minutes</option>
+                  <option value="60">60 minutes</option>
+                  <option value="90">90 minutes</option>
+                </select>
+              </div>
+              <button id="lockRoomBtn" type="button">🚀 Start Game</button>
+            </div>
+            <p id="waitingForHostMsg" class="sub" style="display:none; margin-top:10px; text-transform:none; font-weight:500; letter-spacing:0;">Waiting for the host to start the game…</p>
+
+            <button id="leaveRoomBtn" type="button">Leave room</button>
+          </div>
         </div>
-      </div>
 
-      <button id="startBtn">Enter the Grid</button>
+        <button id="startBtn">Enter the Grid</button>
+      </div>
     </div>
     <div id="setupError"></div>
     </div>
@@ -1607,6 +1635,17 @@ async function syncLobbyEntry(){
     await ref.update(update);
   }catch(e){ /* non-critical — lobby display just won't be perfectly live */ }
 }
+
+function showHomePage(){
+  document.getElementById('roomPage').style.display = 'none';
+  document.getElementById('homePage').style.display = 'block';
+}
+function showRoomPage(){
+  document.getElementById('homePage').style.display = 'none';
+  document.getElementById('roomPage').style.display = 'block';
+}
+document.getElementById('continueToRoomBtn').addEventListener('click', showRoomPage);
+document.getElementById('backToHomeBtn').addEventListener('click', showHomePage);
 
 document.getElementById('createRoomBtn').addEventListener('click', createRoom);
 document.getElementById('joinRoomBtn').addEventListener('click', joinRoom);
