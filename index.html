@@ -232,6 +232,36 @@
   .options-row input[type=color]::-webkit-color-swatch-wrapper{ padding:2px; border-radius:6px; }
   .options-row input[type=color]::-webkit-color-swatch{ border:none; border-radius:5px; }
   .options-row input[type=color]::-moz-color-swatch{ border:none; border-radius:5px; }
+  /* ========================================================== */
+  /* SETUP SCREEN — ROOM / LOBBY
+  /* ========================================================== */
+  #createRoomBtn, #joinRoomBtn, #leaveRoomBtn, #copyRoomCodeBtn{
+    border:1.5px solid var(--dglass-border); background:rgba(255,255,255,.05);
+    border-radius:999px; padding:7px 13px;
+    font-size:12px; font-weight:700; color:var(--text-hi); cursor:pointer;
+    transition:transform .15s, border-color .15s;
+    outline:none;
+  }
+  #createRoomBtn:hover, #joinRoomBtn:hover, #leaveRoomBtn:hover, #copyRoomCodeBtn:hover{
+    background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.35);
+  }
+  #createRoomBtn{width:100%; margin-top:10px; font-weight:800; padding:11px;}
+  #roomCodeRow{display:flex; gap:8px; align-items:stretch; margin-top:6px;}
+  #roomCodeRow input{flex:1; text-transform:uppercase;}
+  #joinRoomBtn{white-space:nowrap; flex-shrink:0;}
+  #roomError{color:#ff7a70; font-size:12.5px; margin-top:8px; min-height:14px; font-weight:700;}
+  #roomCodeDisplay{
+    display:flex; align-items:center; justify-content:space-between;
+    background:rgba(242,169,0,.12); border:1.5px solid rgba(242,169,0,.4); border-radius:12px;
+    padding:10px 14px; margin-bottom:10px;
+  }
+  #roomCodeText{font-family:'Anton', sans-serif; font-size:24px; letter-spacing:3px; color:var(--amber);}
+  #leaveRoomBtn{width:100%; margin-top:8px;}
+  #lobbyPlayerList{margin-top:10px;}
+  .lobby-player{
+    background:rgba(255,255,255,.05); border:1px solid var(--dglass-border); border-radius:10px;
+    padding:8px 12px; font-size:13px; font-weight:700; color:var(--text-hi); margin-bottom:6px;
+  }
   .toggle-switch{
     border:1.5px solid var(--dglass-border); background:rgba(255,255,255,.06);
     border-radius:999px; padding:4px 12px; font-size:11.5px; font-weight:800;
@@ -796,27 +826,50 @@
         </div>
       </div>
 
-      <label for="nameInput">Your name</label>
-      <input id="nameInput" type="text" placeholder="e.g. Jess" maxlength="20" autocomplete="off">
+      <div id="roomSection">
+        <div id="roomJoinPanel">
+          <label>Room code</label>
+          <div id="roomCodeRow">
+            <input id="roomCodeInput" type="text" placeholder="e.g. K7QX" maxlength="6" autocomplete="off">
+            <button id="joinRoomBtn" type="button">Join</button>
+          </div>
+          <button id="createRoomBtn" type="button">➕ Create a new room</button>
+          <div id="roomError"></div>
+        </div>
 
-      <label for="emojiInput">Marker emoji (optional)</label>
-      <input id="emojiInput" type="text" placeholder="📍" maxlength="8" autocomplete="off">
-
-      <label>Pick a side</label>
-      <div class="role-toggle">
-        <button class="role-btn active" data-role="tagger" type="button">
-          <span class="role-icon">🎯</span>
-          Tagger
-          <small>See everyone's real role</small>
-        </button>
-        <button class="role-btn" data-role="runner" type="button">
-          <span class="role-icon">💨</span>
-          Runner
-          <small>Players look identical — guess who's safe</small>
-        </button>
+        <div id="roomLobbyPanel" style="display:none;">
+          <div id="roomCodeDisplay">
+            <span id="roomCodeText"></span>
+            <button id="copyRoomCodeBtn" type="button">📋 Copy</button>
+          </div>
+          <div id="lobbyPlayerList"></div>
+          <button id="leaveRoomBtn" type="button">Leave room</button>
+        </div>
       </div>
 
-      <button id="startBtn">Enter the Grid</button>
+      <div id="gameSetupPanel" style="display:none;">
+        <label for="nameInput">Your name</label>
+        <input id="nameInput" type="text" placeholder="e.g. Jess" maxlength="20" autocomplete="off">
+
+        <label for="emojiInput">Marker emoji (optional)</label>
+        <input id="emojiInput" type="text" placeholder="📍" maxlength="8" autocomplete="off">
+
+        <label>Pick a side</label>
+        <div class="role-toggle">
+          <button class="role-btn active" data-role="tagger" type="button">
+            <span class="role-icon">🎯</span>
+            Tagger
+            <small>See everyone's real role</small>
+          </button>
+          <button class="role-btn" data-role="runner" type="button">
+            <span class="role-icon">💨</span>
+            Runner
+            <small>Players look identical — guess who's safe</small>
+          </button>
+        </div>
+
+        <button id="startBtn">Enter the Grid</button>
+      </div>
     </div>
     <div id="setupError"></div>
     </div>
@@ -1254,6 +1307,168 @@ let ghostTrailState = null;  // Ghost Trail powerup: { lat, lng, bearingDeg } of
 let huntTargetId = null;     // Hunt powerup: locked-on runner id, live-tracked while active
 let huntMarker = null;       // L.marker highlighting the hunted runner's live location
 
+/* ------------------------------------------------------------ */
+/* ROOMS — CODE-BASED LOBBIES (players only see their own room)  */
+/* ------------------------------------------------------------ */
+// Every game-scoped Firebase path (players/powerups/sabotageZones/
+// radarActiveUntil) is namespaced under rooms/<CODE>/ via roomRef() below,
+// so different rooms never see each other's players or live state.
+// users/<uid>/profile+stats stay global (account-level, not game-specific).
+let currentRoomCode = '';
+let isRoomHost = false;
+let roomLobbyRef = null;
+
+function roomRef(path){
+  return db.ref('rooms/' + currentRoomCode + (path ? '/' + path : ''));
+}
+
+const ROOM_CODE_CHARS = '23456789ABCDEFGHJKMNPQRSTUVWXYZ'; // no 0/O/1/I/L — avoids look-alike mixups
+function generateRoomCode(len){
+  let code = '';
+  for(let i = 0; i < len; i++) code += ROOM_CODE_CHARS[Math.floor(Math.random() * ROOM_CODE_CHARS.length)];
+  return code;
+}
+
+const ROOM_MAX_AGE_MS = 12 * 60 * 60 * 1000; // rooms older than this are swept as dead/abandoned
+
+async function cleanupStaleRooms(){
+  // Best-effort housekeeping so the DB doesn't accumulate dead rooms forever.
+  // Runs opportunistically off the back of room creation — never blocks it.
+  try{
+    const snap = await db.ref('rooms').once('value');
+    const all = snap.val() || {};
+    const now = Date.now();
+    const deletions = [];
+    for(const [code, room] of Object.entries(all)){
+      const createdAt = room && room.meta && room.meta.createdAt;
+      if(!createdAt || now - createdAt > ROOM_MAX_AGE_MS){
+        deletions.push(db.ref('rooms/' + code).remove().catch(()=>{}));
+      }
+    }
+    await Promise.all(deletions);
+  }catch(e){ console.warn('room cleanup skipped', e); }
+}
+
+async function createRoom(){
+  const err = document.getElementById('roomError');
+  err.textContent = '';
+  if(!myId){ err.textContent = 'Sign in first.'; return; }
+  const btn = document.getElementById('createRoomBtn');
+  btn.disabled = true;
+  try{
+    cleanupStaleRooms(); // fire-and-forget — don't make room creation wait on it
+    let code, exists = true, attempts = 0;
+    do{
+      code = generateRoomCode(4);
+      const snap = await db.ref('rooms/' + code + '/meta').once('value');
+      exists = snap.exists();
+      attempts++;
+    } while(exists && attempts < 8);
+    await db.ref('rooms/' + code + '/meta').set({ host: myId, createdAt: Date.now() });
+    enterRoom(code, true);
+  }catch(e){
+    err.textContent = 'Could not create a room: ' + e.message;
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+async function joinRoom(){
+  const err = document.getElementById('roomError');
+  err.textContent = '';
+  if(!myId){ err.textContent = 'Sign in first.'; return; }
+  const input = document.getElementById('roomCodeInput');
+  const code = input.value.trim().toUpperCase();
+  if(!code){ err.textContent = 'Enter a room code.'; return; }
+  const btn = document.getElementById('joinRoomBtn');
+  btn.disabled = true;
+  try{
+    const snap = await db.ref('rooms/' + code + '/meta').once('value');
+    if(!snap.exists()){
+      err.textContent = "That room code doesn't exist — check with whoever shared it.";
+      return;
+    }
+    enterRoom(code, snap.val().host === myId);
+  }catch(e){
+    err.textContent = 'Could not join: ' + e.message;
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+function enterRoom(code, hosting){
+  currentRoomCode = code;
+  isRoomHost = hosting;
+  localStorage.setItem('cityTagLastRoom', code);
+  document.getElementById('roomJoinPanel').style.display = 'none';
+  document.getElementById('roomLobbyPanel').style.display = 'block';
+  document.getElementById('roomCodeText').textContent = code;
+  document.getElementById('gameSetupPanel').style.display = 'block';
+  watchLobby();
+  syncLobbyEntry();
+  roomRef('lobby/' + myId).onDisconnect().remove();
+}
+
+function leaveRoom(){
+  if(currentRoomCode && myId){
+    roomRef('lobby/' + myId).onDisconnect().cancel();
+    roomRef('lobby/' + myId).remove().catch(()=>{});
+  }
+  if(roomLobbyRef){ roomLobbyRef.off(); roomLobbyRef = null; }
+  currentRoomCode = '';
+  isRoomHost = false;
+  document.getElementById('roomLobbyPanel').style.display = 'none';
+  document.getElementById('gameSetupPanel').style.display = 'none';
+  document.getElementById('roomJoinPanel').style.display = 'block';
+  document.getElementById('roomCodeInput').value = '';
+  document.getElementById('lobbyPlayerList').innerHTML = '';
+}
+
+function watchLobby(){
+  if(roomLobbyRef) roomLobbyRef.off();
+  roomLobbyRef = roomRef('lobby');
+  roomLobbyRef.on('value', snap => {
+    const all = snap.val() || {};
+    const list = document.getElementById('lobbyPlayerList');
+    const entries = Object.entries(all);
+    if(entries.length === 0){
+      list.innerHTML = '<p class="sub" style="text-transform:none; font-weight:500; letter-spacing:0;">Waiting for players to join…</p>';
+      return;
+    }
+    list.innerHTML = entries
+      .sort((a, b) => (a[1].joinedAt || 0) - (b[1].joinedAt || 0))
+      .map(([id, p]) => '<div class="lobby-player">' + (p.emoji ? escapeHtml(p.emoji) + ' ' : '') + escapeHtml(p.name || 'Player') + (id === myId ? ' (you)' : '') + '</div>')
+      .join('');
+  });
+}
+
+async function syncLobbyEntry(){
+  if(!currentRoomCode || !myId) return;
+  const name = document.getElementById('nameInput').value.trim();
+  const emoji = document.getElementById('emojiInput').value.trim();
+  const ref = roomRef('lobby/' + myId);
+  try{
+    const snap = await ref.once('value');
+    const update = { name: name || 'Player', emoji, role: myRole };
+    if(!snap.exists()) update.joinedAt = Date.now();
+    await ref.update(update);
+  }catch(e){ /* non-critical — lobby display just won't be perfectly live */ }
+}
+
+document.getElementById('createRoomBtn').addEventListener('click', createRoom);
+document.getElementById('joinRoomBtn').addEventListener('click', joinRoom);
+document.getElementById('leaveRoomBtn').addEventListener('click', leaveRoom);
+document.getElementById('copyRoomCodeBtn').addEventListener('click', () => {
+  const btn = document.getElementById('copyRoomCodeBtn');
+  const original = btn.textContent;
+  navigator.clipboard?.writeText(currentRoomCode).then(() => {
+    btn.textContent = '✅ Copied';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  }).catch(()=>{});
+});
+document.getElementById('nameInput').addEventListener('input', syncLobbyEntry);
+document.getElementById('emojiInput').addEventListener('input', syncLobbyEntry);
+
 /* ---------- Radar Scanner: per-role shared broadcast window ---------- */
 // { tagger: expiresAtMs, runner: expiresAtMs } — synced in real time via Firebase.
 // Activating radar as one role only speeds up broadcasting for that same role;
@@ -1374,6 +1589,7 @@ document.querySelectorAll('.role-btn').forEach(btn => {
     btn.classList.add('active');
     myRole = btn.dataset.role;
     updateRulesVisibility();
+    syncLobbyEntry();
   });
 });
 
@@ -1416,6 +1632,10 @@ function startGame(){
     err.textContent = 'Sign in first so your stats are saved.';
     return;
   }
+  if(!currentRoomCode){
+    err.textContent = 'Create or join a room first.';
+    return;
+  }
   if(!myName){
     err.textContent = 'Enter a name so others can spot you on the grid.';
     return;
@@ -1441,6 +1661,11 @@ function startGame(){
   revealedTargetId = localStorage.getItem('cityTagRevealed_' + myId) || null;
 
   db.ref('users/' + myId + '/stats/gamesPlayed').transaction(v => (v || 0) + 1);
+
+  // Moving from the lobby into the actual game — clear the lobby entry
+  // (and its auto-cleanup hook) now that presence is tracked via players/ instead.
+  roomRef('lobby/' + myId).onDisconnect().cancel();
+  roomRef('lobby/' + myId).remove().catch(()=>{});
 
   const setupEl = document.getElementById('setup');
   const blackEl = document.getElementById('transitionBlack');
@@ -1505,7 +1730,7 @@ function startGame(){
   setInterval(updateMaplibrePlayers, 4000);
   setInterval(refreshMaplibrePowerups, POWERUP_CHECK_INTERVAL);
   setInterval(refreshMaplibreSabotageZones, POWERUP_CHECK_INTERVAL);
-  db.ref('radarActiveUntil').on('value', snap => {
+  roomRef('radarActiveUntil').on('value', snap => {
     radarState = snap.val() || { tagger: 0, runner: 0 };
     adjustRadarMode();
   });
@@ -1520,7 +1745,7 @@ function startGame(){
 document.getElementById('endGameBtn').addEventListener('click', async () => {
   if(!confirm("End the game and leave? You'll go back to the start screen — pick a fresh role if you want to play again.")) return;
   try{
-    await db.ref('players/' + myId).remove(); // stop showing on everyone else's map
+    await roomRef('players/' + myId).remove(); // stop showing on everyone else's map
     if(myActivePower && myActivePower.type === 'clone') clearCloneDecoys();
     if(myActivePower && myActivePower.type === 'ghostTrail') clearGhostTrailDecoy();
   }catch(e){ console.error('leave failed', e); }
@@ -1537,6 +1762,8 @@ window.addEventListener('DOMContentLoaded', () => {
   const savedEmoji = localStorage.getItem('cityTagEmoji');
   if(savedName) document.getElementById('nameInput').value = savedName;
   if(savedEmoji) document.getElementById('emojiInput').value = savedEmoji;
+  const savedRoom = localStorage.getItem('cityTagLastRoom');
+  if(savedRoom) document.getElementById('roomCodeInput').value = savedRoom;
   if(savedRole){
     myRole = savedRole;
     document.querySelectorAll('.role-btn').forEach(b => b.classList.toggle('active', b.dataset.role === savedRole));
@@ -1773,7 +2000,7 @@ function initMapLibreScene(){
 async function updateMaplibrePlayers(){
   if(!maplibreMap || !maplibreInitialized) return;
   try{
-    const snap = await db.ref('players').once('value');
+    const snap = await roomRef('players').once('value');
     const all = snap.val() || {};
     const now = Date.now();
     const seen = new Set();
@@ -2273,7 +2500,7 @@ async function pushMyLocation(){
       ts: Date.now()
     };
     if(myActivePower && myActivePower.expiresAt > Date.now()) payload.activePower = myActivePower;
-    await db.ref('players/' + myId).set(payload);
+    await roomRef('players/' + myId).set(payload);
     // Decoys blip on the exact same cadence as the real player, so they
     // never stand out by moving (or updating) on a different schedule.
     if(myActivePower && myActivePower.expiresAt > Date.now()){
@@ -2293,7 +2520,7 @@ async function pushCloneDecoys(){
   for(let i = 0; i < def.cloneCount; i++){
     const cloneId = 'ghost_' + myId + '_' + i;
     const [gLat, gLng] = offsetPointNear(myCurrentPos.lat, myCurrentPos.lng, 60, 260) || [myCurrentPos.lat, myCurrentPos.lng];
-    db.ref('players/' + cloneId).set({
+    roomRef('players/' + cloneId).set({
       name: myName, role: myRole, lat: gLat, lng: gLng, ts: now, isGhost: true
     }).catch(e => console.error('clone push failed', e));
   }
@@ -2302,7 +2529,7 @@ async function pushCloneDecoys(){
 async function clearCloneDecoys(){
   const def = POWERUP_TYPES.clone;
   for(let i = 0; i < def.cloneCount; i++){
-    db.ref('players/ghost_' + myId + '_' + i).remove().catch(()=>{});
+    roomRef('players/ghost_' + myId + '_' + i).remove().catch(()=>{});
   }
 }
 
@@ -2317,14 +2544,14 @@ async function pushGhostTrailDecoy(){
   // independent of where the real player actually goes.
   ghostTrailState.lat += (def.stepMeters * Math.cos(rad)) / 111320;
   ghostTrailState.lng += (def.stepMeters * Math.sin(rad)) / (111320 * Math.cos(ghostTrailState.lat * Math.PI / 180));
-  db.ref('players/ghosttrail_' + myId).set({
+  roomRef('players/ghosttrail_' + myId).set({
     name: myName, role: myRole, lat: ghostTrailState.lat, lng: ghostTrailState.lng, ts: Date.now(), isGhost: true
   }).catch(e => console.error('ghost trail push failed', e));
 }
 
 async function clearGhostTrailDecoy(){
   ghostTrailState = null;
-  db.ref('players/ghosttrail_' + myId).remove().catch(()=>{});
+  roomRef('players/ghosttrail_' + myId).remove().catch(()=>{});
 }
 
 /* ------------------------------------------------------------ */
@@ -2344,7 +2571,7 @@ async function updateHuntHud(){
     return;
   }
   try{
-    const snap = await db.ref('players/' + huntTargetId).once('value');
+    const snap = await roomRef('players/' + huntTargetId).once('value');
     const target = snap.val();
     const now = Date.now();
     if(!target || (now - (target.ts||0)) > STALE_AFTER){
@@ -2391,7 +2618,7 @@ function tickCountdown(){
 /* ------------------------------------------------------------ */
 async function refreshOthers(){
   try{
-    const snap = await db.ref('players').once('value');
+    const snap = await roomRef('players').once('value');
     const all = snap.val();
     if(!all) return;
 
@@ -2491,7 +2718,7 @@ function updateLegendForRole(){
 async function tagPlayer(targetId){
   if(targetId.startsWith('ghost')) return; // Clone/Ghost Trail decoys aren't real players
   try{
-    await db.ref('players/' + targetId).update({ role: 'tagger' });
+    await roomRef('players/' + targetId).update({ role: 'tagger' });
     db.ref('users/' + myId + '/stats/tagsMade').transaction(v => (v || 0) + 1);
     map.closePopup();
     showBanner('Tagged! They\'re a tagger now.');
@@ -2567,7 +2794,7 @@ function distMeters(lat1,lng1,lat2,lng2){
 /* ------------------------------------------------------------ */
 async function refreshPowerups(){
   try{
-    const snap = await db.ref('powerups').once('value');
+    const snap = await roomRef('powerups').once('value');
     const all = snap.val() || {};
     const now = Date.now();
     const active = {};
@@ -2575,7 +2802,7 @@ async function refreshPowerups(){
 
     for(const [id, p] of Object.entries(all)){
       if(!p || p.expiresAt < now){
-        db.ref('powerups/' + id).remove(); // opportunistic cleanup, harmless if it races
+        roomRef('powerups/' + id).remove(); // opportunistic cleanup, harmless if it races
         continue;
       }
       active[id] = p;
@@ -2647,7 +2874,7 @@ function buildPowerupPopup(id, p){
 /* ------------------------------------------------------------ */
 async function refreshSabotageZones(){
   try{
-    const snap = await db.ref('sabotageZones').once('value');
+    const snap = await roomRef('sabotageZones').once('value');
     const all = snap.val() || {};
     const now = Date.now();
     const active = {};
@@ -2655,7 +2882,7 @@ async function refreshSabotageZones(){
 
     for(const [id, z] of Object.entries(all)){
       if(!z || z.expiresAt < now){
-        db.ref('sabotageZones/' + id).remove(); // opportunistic cleanup
+        roomRef('sabotageZones/' + id).remove(); // opportunistic cleanup
         continue;
       }
       active[id] = z;
@@ -2743,7 +2970,7 @@ async function spawnRandomPowerup(){
   const [lat, lng] = randomPointInBoundary();
   const now = Date.now();
   try{
-    await db.ref('powerups').push({ type, lat, lng, spawnedAt: now, expiresAt: now + POWERUP_LIFESPAN });
+    await roomRef('powerups').push({ type, lat, lng, spawnedAt: now, expiresAt: now + POWERUP_LIFESPAN });
   }catch(e){ console.error('spawn failed', e); }
 }
 
@@ -2753,7 +2980,7 @@ async function spawnRandomPowerup(){
 // is background placement logic, not something the player is manually aiming.
 async function pickNearbyRunnerAnchor(){
   try{
-    const snap = await db.ref('players').once('value');
+    const snap = await roomRef('players').once('value');
     const all = snap.val() || {};
     const now = Date.now();
     const runners = Object.entries(all)
@@ -2818,7 +3045,7 @@ async function collectPowerup(id){
   map.closePopup();
 
   try{
-    await db.ref('powerups/' + id).remove();
+    await roomRef('powerups/' + id).remove();
 
     if(def.isReveal){
       // Permanent, single-target, single-player effect: pick one random
@@ -2826,7 +3053,7 @@ async function collectPowerup(id){
       // localStorage, never written to Firebase — this is private knowledge
       // that belongs only to the runner who collected it, not something
       // other players should be able to read off shared data).
-      const snap = await db.ref('players').once('value');
+      const snap = await roomRef('players').once('value');
       const all = snap.val() || {};
       const candidates = Object.keys(all).filter(pid => pid !== myId && all[pid] && (now - (all[pid].ts||0)) < STALE_AFTER);
       if(candidates.length){
@@ -2841,7 +3068,7 @@ async function collectPowerup(id){
       return; // no timed activePower — nothing further to do
     } else if(def.isClone){
       myActivePower = { type: p.type, activatedAt: now, expiresAt: now + def.duration };
-      await db.ref('players/' + myId + '/activePower').set(myActivePower);
+      await roomRef('players/' + myId + '/activePower').set(myActivePower);
       pushCloneDecoys(); // seed decoys immediately rather than waiting for next blip
     } else if(def.isGhostTrail){
       // Peels off in one random direction and just keeps walking that way,
@@ -2851,13 +3078,13 @@ async function collectPowerup(id){
         bearingDeg: Math.random() * 360
       };
       myActivePower = { type: p.type, activatedAt: now, expiresAt: now + def.duration };
-      await db.ref('players/' + myId + '/activePower').set(myActivePower);
+      await roomRef('players/' + myId + '/activePower').set(myActivePower);
       pushGhostTrailDecoy(); // seed it immediately rather than waiting for next blip
     } else if(def.isHunt){
       // Lock onto whichever runner is nearest right now and keep polling
       // their entry directly (faster than the normal 5-minute blip refresh)
       // so their live location is highlighted on the map for the duration.
-      const snap = await db.ref('players').once('value');
+      const snap = await roomRef('players').once('value');
       const all = snap.val() || {};
       let nearestId = null, nearestDist = Infinity;
       for(const [pid, pd] of Object.entries(all)){
@@ -2877,7 +3104,7 @@ async function collectPowerup(id){
     } else if(def.isUnstableAntidote){
       // Instant, one-shot gamble — no personal timer, so this returns early
       // just like Reveal.
-      const snap = await db.ref('players').once('value');
+      const snap = await roomRef('players').once('value');
       const all = snap.val() || {};
       const oppositeRole = myRole === 'runner' ? 'tagger' : 'runner';
       const success = Math.random() < 0.66;
@@ -2888,7 +3115,7 @@ async function collectPowerup(id){
       );
       if(candidates.length){
         const targetId = candidates[Math.floor(Math.random() * candidates.length)];
-        await db.ref('players/' + targetId).update({ role: newRole });
+        await roomRef('players/' + targetId).update({ role: newRole });
         showBanner(success
           ? (def.icon + ' It worked! A ' + oppositeRole + ' just became a ' + myRole + '.')
           : (def.icon + ' Backfired! One of your own is now a ' + oppositeRole + '.'));
@@ -2915,7 +3142,7 @@ async function collectPowerup(id){
         } else {
           lineKey = keys[Math.floor(Math.random() * keys.length)];
         }
-        await db.ref('sabotageZones').push({
+        await roomRef('sabotageZones').push({
           type: p.type, isLineSabotage: true, lineKey,
           radius: def.radius, createdBy: myName, createdAt: now, expiresAt: now + def.duration
         });
@@ -2923,7 +3150,7 @@ async function collectPowerup(id){
         let zLat, zLng;
         const offset = anchor ? offsetPointNear(anchor.lat, anchor.lng, 80, 180) : null;
         if(offset){ [zLat, zLng] = offset; } else { [zLat, zLng] = randomPointInBoundary(); }
-        await db.ref('sabotageZones').push({
+        await roomRef('sabotageZones').push({
           type: p.type, lat: zLat, lng: zLng,
           radius: def.radius, createdBy: myName, createdAt: now, expiresAt: now + def.duration
         });
@@ -2932,10 +3159,10 @@ async function collectPowerup(id){
     } else if(def.isRadar){
       // Shared per-role broadcast window — only speeds up pushing for
       // players on the SAME side as the activator, not the opposing role.
-      await db.ref('radarActiveUntil/' + myRole).set(now + def.duration);
+      await roomRef('radarActiveUntil/' + myRole).set(now + def.duration);
     } else {
       myActivePower = { type: p.type, activatedAt: now, expiresAt: now + def.duration };
-      await db.ref('players/' + myId + '/activePower').set(myActivePower);
+      await roomRef('players/' + myId + '/activePower').set(myActivePower);
     }
   }catch(e){ console.error('collect failed', e); }
 
@@ -2955,7 +3182,7 @@ function updateActivePowerStatusHud(){
       if(myActivePower.type === 'ghostTrail') clearGhostTrailDecoy();
       if(myActivePower.type === 'hunt'){ huntTargetId = null; clearHuntMarker(); const hs = document.getElementById('huntStatus'); if(hs) hs.style.display = 'none'; }
       myActivePower = null;
-      db.ref('players/' + myId + '/activePower').remove();
+      roomRef('players/' + myId + '/activePower').remove();
     }
     el.style.display = 'none';
     return;
