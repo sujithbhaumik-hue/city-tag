@@ -268,38 +268,55 @@
   }
   #roomCodeText{font-family:'Anton', sans-serif; font-size:24px; letter-spacing:3px; color:var(--amber);}
   #leaveRoomBtn{width:100%; margin-top:8px;}
-  #lobbyPlayerList{margin-top:10px;}
+  .lobby-heading{margin:14px 0 6px;}
+  #lobbyPlayerList{margin-top:0;}
   .lobby-player{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
     background:rgba(255,255,255,.05); border:1px solid var(--dglass-border); border-radius:10px;
-    padding:8px 12px; font-size:13px; font-weight:700; color:var(--text-hi); margin-bottom:6px;
+    padding:8px 10px 8px 12px; font-size:13px; font-weight:700; color:var(--text-hi); margin-bottom:6px;
   }
-  #hostControls{margin-top:10px; padding-top:10px; border-top:1px solid var(--dglass-border);}
+  .lobby-player-name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .role-pick-btn{
+    flex-shrink:0; border:1.5px solid var(--dglass-border); border-radius:999px;
+    padding:4px 10px; font-size:11px; font-weight:800; cursor:pointer; outline:none;
+    transition:border-color .15s, background .15s, color .15s;
+    background:rgba(255,255,255,.05); color:var(--text-lo);
+  }
+  .role-pick-btn.tagger{border-color:rgba(224,51,43,.5); background:rgba(224,51,43,.14); color:#ff9d92;}
+  .role-pick-btn.runner{border-color:rgba(34,119,196,.5); background:rgba(34,119,196,.16); color:#8fc4ef;}
+  #hostControls{margin-top:14px; padding-top:14px; border-top:1px solid var(--dglass-border);}
   #advancedSettingsBtn{width:100%; font-weight:800;}
   #advancedSettingsPanel{
     display:none; opacity:0;
-    transition:opacity .2s ease;
+    background:rgba(255,255,255,.04); border:1px solid var(--dglass-border); border-radius:16px;
+    padding:14px; transition:opacity .2s ease;
   }
   #advancedSettingsPanel.open{ opacity:1; margin-top:10px; }
-  #powerupToggleList{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;}
+  #advancedSettingsPanel label{margin:14px 0 6px;}
+  #advancedSettingsPanel label:first-child{margin-top:0;}
+  #powerupToggleList{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:4px;}
   .powerup-toggle{
-    display:flex; align-items:center; gap:5px;
+    display:flex; align-items:center; gap:5px; margin:0;
     background:rgba(255,255,255,.05); border:1.5px solid var(--dglass-border); border-radius:999px;
     padding:5px 10px 5px 8px; font-size:11.5px; font-weight:700; color:var(--text-lo); cursor:pointer;
   }
   .powerup-toggle input{margin:0; cursor:pointer;}
   .powerup-toggle.checked{color:var(--text-hi); border-color:rgba(242,169,0,.5); background:rgba(242,169,0,.1);}
   #roomDurationInput{
-    width:100%; padding:10px 12px; border:1.5px solid var(--dglass-border); border-radius:12px;
+    appearance:none; -webkit-appearance:none; -moz-appearance:none;
+    width:100%; padding:10px 34px 10px 12px; border:1.5px solid var(--dglass-border); border-radius:12px;
+    background-color:rgba(255,255,255,.05); color:var(--text-hi); font-weight:700; font-size:13px;
+    outline:none; cursor:pointer;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0L5 6L10 0Z' fill='%23c9ccd1'/></svg>");
+    background-repeat:no-repeat; background-position:right 14px center;
+  }
+  #roomDurationInput option{background:#15161a; color:var(--text-hi);}
+  #startingTaggersRow{margin-top:10px;}
+  #startingTaggersInput{
+    width:60px; padding:6px 8px; border:1.5px solid var(--dglass-border); border-radius:8px;
     background:rgba(255,255,255,.05); color:var(--text-hi); font-weight:700; font-size:13px;
-    margin-bottom:12px; outline:none;
+    outline:none; text-align:center;
   }
-  #lockRoomBtn{
-    width:100%; padding:11px; font-weight:800; border-radius:999px; border:1.5px solid rgba(242,169,0,.5);
-    background:rgba(242,169,0,.15); color:var(--amber); font-size:13px; cursor:pointer;
-    transition:transform .15s, border-color .15s;
-    outline:none;
-  }
-  #lockRoomBtn:hover{background:rgba(242,169,0,.25);}
   .toggle-switch{
     border:1.5px solid var(--dglass-border); background:rgba(255,255,255,.06);
     border-radius:999px; padding:4px 12px; font-size:11.5px; font-weight:800;
@@ -901,31 +918,17 @@
           </div>
         </div>
 
-        <button id="continueToRoomBtn" type="button">Continue →</button>
-      </div>
-
-      <div id="roomPage" style="display:none;">
-        <button id="backToHomeBtn" type="button">← Back</button>
-
         <label for="nameInput">Your name</label>
         <input id="nameInput" type="text" placeholder="e.g. Jess" maxlength="20" autocomplete="off">
 
         <label for="emojiInput">Marker emoji (optional)</label>
         <input id="emojiInput" type="text" placeholder="📍" maxlength="8" autocomplete="off">
 
-        <label>Pick a side</label>
-        <div class="role-toggle">
-          <button class="role-btn active" data-role="tagger" type="button">
-            <span class="role-icon">🎯</span>
-            Tagger
-            <small>See everyone's real role</small>
-          </button>
-          <button class="role-btn" data-role="runner" type="button">
-            <span class="role-icon">💨</span>
-            Runner
-            <small>Players look identical — guess who's safe</small>
-          </button>
-        </div>
+        <button id="continueToRoomBtn" type="button">Continue →</button>
+      </div>
+
+      <div id="roomPage" style="display:none;">
+        <button id="backToHomeBtn" type="button">← Back</button>
 
         <div id="roomSection">
           <div id="roomJoinPanel">
@@ -943,6 +946,8 @@
               <span id="roomCodeText"></span>
               <button id="copyRoomCodeBtn" type="button">📋 Copy</button>
             </div>
+
+            <label class="lobby-heading">Players</label>
             <div id="lobbyPlayerList"></div>
 
             <div id="hostControls" style="display:none;">
@@ -950,17 +955,31 @@
               <div id="advancedSettingsPanel">
                 <label>Enabled powerups</label>
                 <div id="powerupToggleList"></div>
+
                 <label for="roomDurationInput">Round length</label>
                 <select id="roomDurationInput">
                   <option value="0">No limit</option>
                   <option value="15">15 minutes</option>
-                  <option value="30" selected>30 minutes</option>
+                  <option value="30">30 minutes</option>
                   <option value="45">45 minutes</option>
                   <option value="60">60 minutes</option>
                   <option value="90">90 minutes</option>
+                  <option value="120" selected>2 hours</option>
+                  <option value="150">2.5 hours</option>
+                  <option value="180">3 hours</option>
                 </select>
+
+                <label>Roles</label>
+                <div class="options-row">
+                  <span>Randomly assign roles</span>
+                  <button id="randomRolesToggle" class="toggle-switch active" type="button" onclick="toggleRandomRoles()">On</button>
+                </div>
+                <div id="startingTaggersRow" class="options-row">
+                  <span>Starting taggers</span>
+                  <input id="startingTaggersInput" type="number" min="1" value="1">
+                </div>
+                <p id="manualRolesHint" class="sub" style="display:none; margin:6px 0 0; text-transform:none; font-weight:500; letter-spacing:0; font-size:12px;">Tap a player's role above in the list to assign it manually.</p>
               </div>
-              <button id="lockRoomBtn" type="button">🚀 Start Game</button>
             </div>
             <p id="waitingForHostMsg" class="sub" style="display:none; margin-top:10px; text-transform:none; font-weight:500; letter-spacing:0;">Waiting for the host to start the game…</p>
 
@@ -1420,6 +1439,8 @@ let roomLobbyRef = null;
 let roomMetaRef = null;
 let roomConfig = null;       // { enabledPowers: {type:bool,...}, durationMinutes } — set once the host starts the game
 let matchEndTimer = null;    // setTimeout handle for the round-duration auto-end
+let randomRolesEnabled = true;   // host's Advanced Settings toggle — random vs manual role assignment
+let manualRoleAssignments = {};  // host's in-progress {uid: 'tagger'|'runner'} picks when randomRolesEnabled is off
 
 function roomRef(path){
   return db.ref('rooms/' + currentRoomCode + (path ? '/' + path : ''));
@@ -1508,13 +1529,27 @@ function enterRoom(code, hosting){
   currentRoomCode = code;
   isRoomHost = hosting;
   roomConfig = null;
+  randomRolesEnabled = true;
+  manualRoleAssignments = {};
   localStorage.setItem('cityTagLastRoom', code);
   document.getElementById('roomJoinPanel').style.display = 'none';
   document.getElementById('roomLobbyPanel').style.display = 'block';
   document.getElementById('roomCodeText').textContent = code;
   document.getElementById('hostControls').style.display = hosting ? 'block' : 'none';
   document.getElementById('waitingForHostMsg').style.display = hosting ? 'none' : 'block';
-  if(hosting) renderPowerupToggleList();
+  const startBtn = document.getElementById('startBtn');
+  startBtn.textContent = hosting ? 'Start the Grid' : 'Enter the Grid';
+  startBtn.disabled = !hosting; // non-hosts wait for the host's meta/locked flag to flip
+  if(hosting){
+    renderPowerupToggleList();
+    // Reset the advanced-settings controls to their defaults for this fresh room.
+    const rrBtn = document.getElementById('randomRolesToggle');
+    rrBtn.classList.add('active'); rrBtn.textContent = 'On';
+    document.getElementById('startingTaggersRow').style.display = 'flex';
+    document.getElementById('startingTaggersInput').value = 1;
+    document.getElementById('manualRolesHint').style.display = 'none';
+    document.getElementById('roomDurationInput').value = '120';
+  }
   watchLobby();
   watchRoomMeta();
   syncLobbyEntry();
@@ -1531,12 +1566,16 @@ function leaveRoom(){
   currentRoomCode = '';
   isRoomHost = false;
   roomConfig = null;
+  manualRoleAssignments = {};
   document.getElementById('roomLobbyPanel').style.display = 'none';
   document.getElementById('roomJoinPanel').style.display = 'block';
   document.getElementById('roomCodeInput').value = '';
   document.getElementById('lobbyPlayerList').innerHTML = '';
   document.getElementById('hostControls').style.display = 'none';
   document.getElementById('waitingForHostMsg').style.display = 'none';
+  const startBtn = document.getElementById('startBtn');
+  startBtn.textContent = 'Enter the Grid';
+  startBtn.disabled = false;
 }
 
 function watchLobby(){
@@ -1545,21 +1584,40 @@ function watchLobby(){
   roomLobbyRef.on('value', snap => {
     const all = snap.val() || {};
     const list = document.getElementById('lobbyPlayerList');
-    const entries = Object.entries(all);
+    const entries = Object.entries(all)
+      .sort((a, b) => (a[1].joinedAt || 0) - (b[1].joinedAt || 0));
     if(entries.length === 0){
       list.innerHTML = '<p class="sub" style="text-transform:none; font-weight:500; letter-spacing:0;">Waiting for players to join…</p>';
       return;
     }
-    list.innerHTML = entries
-      .sort((a, b) => (a[1].joinedAt || 0) - (b[1].joinedAt || 0))
-      .map(([id, p]) => '<div class="lobby-player">' + (p.emoji ? escapeHtml(p.emoji) + ' ' : '') + escapeHtml(p.name || 'Player') + (id === myId ? ' (you)' : '') + '</div>')
-      .join('');
+    const showManualPicker = isRoomHost && !randomRolesEnabled;
+    list.innerHTML = entries.map(([id, p]) => {
+      const label = (p.emoji ? escapeHtml(p.emoji) + ' ' : '') + escapeHtml(p.name || 'Player') + (id === myId ? ' (you)' : '');
+      if(!showManualPicker){
+        return '<div class="lobby-player"><span class="lobby-player-name">' + label + '</span></div>';
+      }
+      const role = manualRoleAssignments[id] || 'runner';
+      return '<div class="lobby-player"><span class="lobby-player-name">' + label + '</span>'
+        + '<button class="role-pick-btn ' + role + '" type="button" data-uid="' + id + '">'
+        + (role === 'tagger' ? '🎯 Tagger' : '💨 Runner') + '</button></div>';
+    }).join('');
+    if(showManualPicker){
+      list.querySelectorAll('.role-pick-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const uid = btn.dataset.uid;
+          const next = (manualRoleAssignments[uid] || 'runner') === 'tagger' ? 'runner' : 'tagger';
+          manualRoleAssignments[uid] = next;
+          btn.className = 'role-pick-btn ' + next;
+          btn.textContent = next === 'tagger' ? '🎯 Tagger' : '💨 Runner';
+        });
+      });
+    }
   });
 }
 
 // Live-syncs the host's chosen game settings (which powerups are enabled,
-// round duration) and lock state, so every lobby member — not just the host —
-// knows the moment the game has actually started.
+// round duration, role assignments) and lock state, so every lobby member —
+// not just the host — knows the moment the game has actually started.
 function watchRoomMeta(){
   if(roomMetaRef) roomMetaRef.off();
   roomMetaRef = roomRef('meta');
@@ -1567,8 +1625,12 @@ function watchRoomMeta(){
     const meta = snap.val() || {};
     if(meta.locked && meta.config){
       roomConfig = meta.config;
+      if(meta.roleAssignments && meta.roleAssignments[myId]){
+        myRole = meta.roleAssignments[myId];
+      }
       if(!isRoomHost){
         document.getElementById('waitingForHostMsg').textContent = "Host has started the game — hit Enter the Grid whenever you're ready!";
+        document.getElementById('startBtn').disabled = false;
       }
     }
   });
@@ -1598,24 +1660,60 @@ function toggleAdvancedSettings(){
   }
 }
 
+function toggleRandomRoles(){
+  randomRolesEnabled = !randomRolesEnabled;
+  const btn = document.getElementById('randomRolesToggle');
+  btn.classList.toggle('active', randomRolesEnabled);
+  btn.textContent = randomRolesEnabled ? 'On' : 'Off';
+  document.getElementById('startingTaggersRow').style.display = randomRolesEnabled ? 'flex' : 'none';
+  document.getElementById('manualRolesHint').style.display = randomRolesEnabled ? 'none' : 'block';
+  if(roomLobbyRef) watchLobby(); // re-render the player list with/without the manual role pickers
+}
+
+// Host-only: called when the host clicks the (now unified) start button.
+// Applies the chosen powerup/duration/role settings, locks the room against
+// new joins, then enters the grid same as everyone else.
 async function startGameAsHost(){
   const err = document.getElementById('roomError');
   err.textContent = '';
-  if(!currentRoomCode || !isRoomHost) return;
   const enabledPowers = {};
   document.querySelectorAll('#powerupToggleList input[type=checkbox]').forEach(cb => {
     enabledPowers[cb.dataset.power] = cb.checked;
   });
   const durationMinutes = Number(document.getElementById('roomDurationInput').value) || 0;
-  const btn = document.getElementById('lockRoomBtn');
+
+  let roleAssignments = {};
+  try{
+    const snap = await roomRef('lobby').once('value');
+    const uids = Object.keys(snap.val() || {});
+    if(uids.length === 0){
+      err.textContent = 'No one has joined the lobby yet.';
+      return;
+    }
+    if(randomRolesEnabled){
+      const shuffled = uids.slice().sort(() => Math.random() - 0.5);
+      const requested = Number(document.getElementById('startingTaggersInput').value) || 1;
+      const taggerCount = Math.max(1, Math.min(uids.length - 1, requested)) || 1;
+      shuffled.forEach((uid, i) => { roleAssignments[uid] = i < taggerCount ? 'tagger' : 'runner'; });
+    } else {
+      uids.forEach(uid => { roleAssignments[uid] = manualRoleAssignments[uid] || 'runner'; });
+    }
+  }catch(e){
+    err.textContent = 'Could not read the player list: ' + e.message;
+    return;
+  }
+
+  const btn = document.getElementById('startBtn');
   btn.disabled = true;
   try{
     await roomRef('meta').update({
       locked: true,
       startedAt: Date.now(),
-      config: { enabledPowers, durationMinutes }
+      config: { enabledPowers, durationMinutes },
+      roleAssignments
     });
     roomConfig = { enabledPowers, durationMinutes }; // don't wait on the listener round-trip
+    myRole = roleAssignments[myId] || 'runner';
     startGame();
   }catch(e){
     err.textContent = 'Could not start the game: ' + e.message;
@@ -1630,7 +1728,7 @@ async function syncLobbyEntry(){
   const ref = roomRef('lobby/' + myId);
   try{
     const snap = await ref.once('value');
-    const update = { name: name || 'Player', emoji, role: myRole };
+    const update = { name: name || 'Player', emoji };
     if(!snap.exists()) update.joinedAt = Date.now();
     await ref.update(update);
   }catch(e){ /* non-critical — lobby display just won't be perfectly live */ }
@@ -1650,7 +1748,6 @@ document.getElementById('backToHomeBtn').addEventListener('click', showHomePage)
 document.getElementById('createRoomBtn').addEventListener('click', createRoom);
 document.getElementById('joinRoomBtn').addEventListener('click', joinRoom);
 document.getElementById('leaveRoomBtn').addEventListener('click', leaveRoom);
-document.getElementById('lockRoomBtn').addEventListener('click', startGameAsHost);
 document.getElementById('copyRoomCodeBtn').addEventListener('click', () => {
   const btn = document.getElementById('copyRoomCodeBtn');
   const original = btn.textContent;
@@ -1773,19 +1870,15 @@ async function showStats(){
 
 /* ---------- Setup screen wiring ---------- */
 /* ------------------------------------------------------------ */
-/* SETUP SCREEN — ROLE TOGGLE & GAME START WIRING */
+/* SETUP SCREEN — GAME START WIRING */
 /* ------------------------------------------------------------ */
-document.querySelectorAll('.role-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    myRole = btn.dataset.role;
-    updateRulesVisibility();
-    syncLobbyEntry();
-  });
+document.getElementById('startBtn').addEventListener('click', () => {
+  if(isRoomHost && !roomConfig){
+    startGameAsHost();
+  } else {
+    startGame();
+  }
 });
-
-document.getElementById('startBtn').addEventListener('click', startGame);
 
 /* ------------------------------------------------------------ */
 /* SETUP SCREEN — RESTRICT MARKER EMOJI TO A SINGLE GRAPHEME */
@@ -1974,7 +2067,6 @@ window.addEventListener('DOMContentLoaded', () => {
   if(savedRoom) document.getElementById('roomCodeInput').value = savedRoom;
   if(savedRole){
     myRole = savedRole;
-    document.querySelectorAll('.role-btn').forEach(b => b.classList.toggle('active', b.dataset.role === savedRole));
     updateRulesVisibility();
   }
   if(localStorage.getItem('cityTagLowPower') === '1'){
