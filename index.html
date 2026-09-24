@@ -1534,7 +1534,12 @@ async function joinRoom(){
         return;
       }
     }
-    enterRoom(code, meta.host === myId);
+    // Once a room is locked, everyone rejoining — including the original
+    // host — is treated as a regular player: the host's job (configuring
+    // and starting) is already done, so there's nothing left for host-only
+    // controls to do, and showing them anyway was confusing on rejoin.
+    const hosting = meta.host === myId && !meta.locked;
+    enterRoom(code, hosting);
   }catch(e){
     err.textContent = 'Could not join: ' + e.message;
   }finally{
