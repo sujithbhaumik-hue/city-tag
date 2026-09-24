@@ -285,7 +285,14 @@
   .role-pick-btn.tagger{border-color:rgba(224,51,43,.5); background:rgba(224,51,43,.14); color:#ff9d92;}
   .role-pick-btn.runner{border-color:rgba(34,119,196,.5); background:rgba(34,119,196,.16); color:#8fc4ef;}
   #hostControls{margin-top:14px; padding-top:14px; border-top:1px solid var(--dglass-border);}
-  #advancedSettingsBtn{width:100%; font-weight:800;}
+  #advancedSettingsBtn{
+    width:100%; border:1.5px solid var(--dglass-border); background:rgba(255,255,255,.05);
+    border-radius:999px; padding:7px 13px;
+    font-size:12px; font-weight:800; color:var(--text-hi); cursor:pointer;
+    transition:transform .15s, border-color .15s;
+    outline:none;
+  }
+  #advancedSettingsBtn:hover{background:rgba(255,255,255,.1); border-color:rgba(242,169,0,.5);}
   #advancedSettingsPanel{
     display:none; opacity:0;
     background:rgba(255,255,255,.04); border:1px solid var(--dglass-border); border-radius:16px;
@@ -706,7 +713,7 @@
   .me-marker-emoji-badge{
     position:absolute; top:0; left:9px; width:26px; height:26px; border-radius:50%;
     background:var(--my-emoji-fill-color); border:2px solid var(--my-emoji-ring-color); color:var(--ink);
-    display:flex; align-items:center; justify-content:center;
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
     font-size:15px; line-height:1;
     forced-color-adjust:none; /* keep the chosen fill literal even under OS/browser forced-color or smart-invert modes */
   }
@@ -963,10 +970,14 @@
                   <option value="30">30 minutes</option>
                   <option value="45">45 minutes</option>
                   <option value="60">60 minutes</option>
+                  <option value="75">75 minutes</option>
                   <option value="90">90 minutes</option>
-                  <option value="120" selected>2 hours</option>
-                  <option value="150">2.5 hours</option>
-                  <option value="180">3 hours</option>
+                  <option value="105">105 minutes</option>
+                  <option value="120" selected>120 minutes</option>
+                  <option value="135">135 minutes</option>
+                  <option value="150">150 minutes</option>
+                  <option value="165">165 minutes</option>
+                  <option value="180">180 minutes</option>
                 </select>
 
                 <label>Roles</label>
@@ -987,7 +998,7 @@
           </div>
         </div>
 
-        <button id="startBtn">Enter the Grid</button>
+        <button id="startBtn" style="display:none;">Enter the Grid</button>
       </div>
     </div>
     <div id="setupError"></div>
@@ -1514,8 +1525,14 @@ async function joinRoom(){
     }
     const meta = snap.val();
     if(meta.locked && meta.host !== myId){
-      err.textContent = 'That game has already started — ask the host for a new room.';
-      return;
+      // Already having joined this room before (even if the page got reloaded
+      // and wiped local state) still earns a way back in after it's started —
+      // only brand-new joiners get turned away from a locked room.
+      const memberSnap = await db.ref('rooms/' + code + '/members/' + myId).once('value');
+      if(!memberSnap.exists()){
+        err.textContent = 'That game has already started — ask the host for a new room.';
+        return;
+      }
     }
     enterRoom(code, meta.host === myId);
   }catch(e){
@@ -1532,12 +1549,17 @@ function enterRoom(code, hosting){
   randomRolesEnabled = true;
   manualRoleAssignments = {};
   localStorage.setItem('cityTagLastRoom', code);
+  // Permanent (non-onDisconnect) record that this uid has legitimately been
+  // part of this room — the lobby entry itself gets cleared on disconnect,
+  // so this is what lets someone back into a locked room after a reload.
+  roomRef('members/' + myId).set(true).catch(()=>{});
   document.getElementById('roomJoinPanel').style.display = 'none';
   document.getElementById('roomLobbyPanel').style.display = 'block';
   document.getElementById('roomCodeText').textContent = code;
   document.getElementById('hostControls').style.display = hosting ? 'block' : 'none';
   document.getElementById('waitingForHostMsg').style.display = hosting ? 'none' : 'block';
   const startBtn = document.getElementById('startBtn');
+  startBtn.style.display = 'block';
   startBtn.textContent = hosting ? 'Start the Grid' : 'Enter the Grid';
   startBtn.disabled = !hosting; // non-hosts wait for the host's meta/locked flag to flip
   if(hosting){
@@ -1574,6 +1596,7 @@ function leaveRoom(){
   document.getElementById('hostControls').style.display = 'none';
   document.getElementById('waitingForHostMsg').style.display = 'none';
   const startBtn = document.getElementById('startBtn');
+  startBtn.style.display = 'none';
   startBtn.textContent = 'Enter the Grid';
   startBtn.disabled = false;
 }
